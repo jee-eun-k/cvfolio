@@ -27,20 +27,17 @@ export const DEFAULT_CONFIGURATION: DefaultConfigurationType = {
   baseUrl: astroConfig.site || 'https://getcvfolio.com',
   author: {
     avatar,
-    name: 'Jee Eun Kang',
+    name: 'Jee-eun Kang',
     headline: 'FE Engineer',
-    username: 'jeeeun-k',
+    username: 'jee-eun-k',
     location: 'Seoul',
     pronouns: 'She/Her',
   },
   seo: {
-    title: 'CV Folio — An Astro template inspired on Read.cv',
-    description: 'Clean and aesthetic portfolio website for developers and designers',
+    title: 'Portfolio of Jee-eun Kang, Frontend Engineer',
+    description: 'Hi, I am Jee-eun Kang, a frontend engineer passionate about interface design and web experiences.',
     type: 'website',
     image: MetaDefaultImage,
-    twitter: {
-      creator: '@cvfolio'
-    },
     robots: 'noindex, nofollow',
   }
 };
