@@ -74,8 +74,8 @@ There's nothing special about `src/components/`, but that's where we like to put
 
 Any static assets, like images, can be placed in the `public/` directory.
 
-## Docs
-Documentation for customization [docs/customization](/docs/docs.md)
+## Documentation
+List of documentation [Here](/docs/docs.md)
 
 ## 🧞 Commands
 
