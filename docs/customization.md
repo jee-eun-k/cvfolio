@@ -1,23 +1,26 @@
 # ✏️ Customizing CVfolio
 
-This guide helps you modify and adapt **CVfolio** to make it fit your personal needs.
+This guide walks you through how to customize the CVfolio template to reflect your personal profile, style, and content.
 
 ---
 
-## 📁 Project Structure (Relevant for Customization)
+## 📁 Key Project Structure
 
-Here are the most important folders and files:
+Here’s an overview of folders relevant to customization:
 
-- `src/config/`: Configuration files for profile, SEO, and site metadata.
-- `src/components/`: Reusable UI components (e.g., Hero, Projects, Layout).
-- `src/data/`: Contains JSON files for project and experience listings.
-- `public/`: Static files like images, favicons, avatars.
+| Path                     | Purpose                                                   |
+|--------------------------|-----------------------------------------------------------|
+| `src/assets/`            | Fonts and static images (e.g., avatar, meta image)        |
+| `src/components/`        | UI and layout components (header, footer, etc.)           |
+| `src/content/`           | Editable content: jobs, links, posts, talks, pages        |
+| `src/layouts/`           | Astro layout templates                                    |
+| `src/pages/`             | Page routing (`index.astro`, `writing/`)                  |
+| `src/styles/global.css`  | Global CSS and utility styles                             |
+| `src/lib/`               | Utility functions and constants                           |
 
 ---
 
-## 👤 Customize Your Personal Information
+## 👤 Personal Information (Name, Bio, Avatar)
 
-Edit your profile details in:
-
-```ts
-src/config/profile.ts
+Update your **avatar**:
+- Replace the default image:
