@@ -2,9 +2,7 @@
 
 This guide walks you through how to customize the CVfolio template to reflect your personal profile, style, and content.
 
----
-
-## 📁 Key Project Structure
+## 📁 Some important files
 
 Here’s an overview of folders relevant to customization:
 
@@ -18,9 +16,4 @@ Here’s an overview of folders relevant to customization:
 | `src/styles/global.css`  | Global CSS and utility styles                             |
 | `src/lib/`               | Utility functions and constants                           |
 
----
-
-## 👤 Personal Information (Name, Bio, Avatar)
-
-Update your **avatar**:
-- Replace the default image:
+> You are free to preserve the labels of `Made by CVFolio` from the footer and the floating badge.
