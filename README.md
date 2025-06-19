@@ -10,11 +10,12 @@ Over time, we've managed to add features and improve the design. There are still
 - Follow us on X at **[@coderdiaz »](https://x.com/coderdiaz)**
 - Wish to contribute? Here is how:
 
-## Installation
+## How to contribute
 
 Cvfolio is built on top of Astro and uses TailwindCSS for generate the website. If you are familiar with Astro, you should feel right at home.
 
 In terms of local development, you can use the following requirements:
+
 - Node.js - v18.17.1 or v20.3.0, v22.0.0 or higher.
 
 If you have these requirements, you can start by cloning the repository and installing the dependencies:
@@ -45,6 +46,7 @@ bun dev
 ```
 
 If everything is OK, push your branch and create a pull request:
+
 ```sh
 git commit -am "Your commit message"
 
@@ -52,7 +54,6 @@ git push
 ```
 
 Visit [github.com/coderdiaz-studio/cvfolio/pulls](https://github.com/coderdiaz-studio/cvfolio/pulls) and create a pull request.
-
 
 ## 🚀 Project Structure
 
@@ -77,9 +78,9 @@ Any static assets, like images, can be placed in the `public/` directory.
 
 All commands are run from the root of the project, from a terminal:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
+| Command               | Action                                           |
+| :-------------------- | :----------------------------------------------- |
+| `bun install`         | Installs dependencies                            |
 | `bun dev`             | Starts local dev server at `localhost:4321`      |
 | `bun build`           | Build your production site to `./dist/`          |
 | `bun preview`         | Preview your build locally, before deploying     |
