@@ -55,41 +55,16 @@ git push
 
 Visit [github.com/coderdiaz-studio/cvfolio/pulls](https://github.com/coderdiaz-studio/cvfolio/pulls) and create a pull request.
 
-## 🚀 Project Structure
+## Check our Documentation
 
-Inside of your Astro project, you'll see the following folders and files:
+Here is a list of documentation for more in depth information about the cvfolio.
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+| Documentation                 | Link                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| Project Structure             | [docs/project-structure](/docs/project-structure.md)                                |
+| Customization                 | [docs/customization](/docs/customization.md)                                        |
+| How to deploy on GitHub Pages | [docs/guides/how-to-deploy-github-pages](docs/guides/how-to-deploy-github-pages.md) |
 
-Astro looks for `.astro` or `.md`, `.mdx` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+Feel free to add more documentation.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## Documentation
-List of documentation [Here](/docs/docs.md)
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command               | Action                                           |
-| :-------------------- | :----------------------------------------------- |
-| `bun install`         | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [Astro documentation](https://docs.astro.build).
+If you have any comments or recommendations contact me vía [X](https://x.com/coderdiaz) or email [hey(at)coderdiaz.com](mailto:hey@coderdiaz.com), or write an Issue with your proposal.
