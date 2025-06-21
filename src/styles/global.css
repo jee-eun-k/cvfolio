@@ -55,6 +55,12 @@
   --color-headings: var(--palette-800);
   --color-border: var(--palette-300);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: var(--font-inter), 
+    ui-sans-serif, 
+    system-ui, 
+    sans-serif, 
+    'Apple Color Emoji', 
+    'Segoe UI Emoji', 
+    'Segoe UI Symbol', 
+    'Noto Color Emoji';
 }
