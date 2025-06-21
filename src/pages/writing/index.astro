@@ -7,10 +7,10 @@ import { DEFAULT_CONFIGURATION } from '@/lib/constants';
 import PostPreview from '@/components/ui/PostPreview.astro';
 
 const entry = await getEntry('pages', 'writing');
-const posts = await getCollection('posts');
+const posts = await getCollection('posts', ({ data }) => !data.draft);
 ---
 
-<BaseLayout seo={entry.data.seo}>
+<BaseLayout seo={entry?.data.seo}>
   <Container as='section' class='py-6'>
     <Author {...DEFAULT_CONFIGURATION.author} />
   </Container>
@@ -18,7 +18,7 @@ const posts = await getCollection('posts');
     <div class="flex flex-col gap-6">
       <span class="text-headings">Latest posts</span>
       <ul class="flex flex-col gap-3">
-        {posts.map((post) => <PostPreview entry={post} />)}
+        {posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime()).map((post) => <PostPreview entry={post} />)}
       </ul>
     </div>
   </Container>

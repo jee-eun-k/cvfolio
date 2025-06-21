@@ -32,7 +32,7 @@ const { Content } = await render(entry);
         </div>
         <h1 class="text-3xl font-semibold text-headings">{entry.data.title}</h1>
       </div>
-      {entry.data.image && (
+      <!-- {entry.data.image && (
         <div class="relative aspect-video overflow-hidden rounded-lg">
           <Image
             src={entry.data.image}
@@ -40,7 +40,7 @@ const { Content } = await render(entry);
             class="object-cover"
           />
         </div>
-      )}
+      )} -->
       <div class="prose dark:prose-invert">
         <Content />
       </div>
