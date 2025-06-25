@@ -7,6 +7,7 @@ import Footer from '@/components/partials/Footer.astro';
 import Head from '@/components/partials/Head.astro';
 import SwitchTheme from '@/components/SwitchTheme.tsx';
 import SwitchLang from '@/components/SwitchLang.tsx';
+import DownloadCV from '@/components/DownloadCV';
 
 interface Props {
   seo?: Seo
@@ -23,6 +24,7 @@ const { seo } = Astro.props;
       <slot />
     </main>
     <Footer />
+    <DownloadCV client:only="react" />
     <SwitchTheme client:only="react" />
     <SwitchLang client:only="react" />
   </body>
