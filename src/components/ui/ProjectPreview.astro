@@ -1,0 +1,47 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'projects'>;
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+---
+
+<li class="group">
+  <a 
+    href={data.url} 
+    target="_blank" 
+    rel="noopener noreferrer"
+    class="block bg-background border border-border rounded-lg overflow-hidden hover:border-headings/20 transition-all duration-200 hover:shadow-lg"
+  >
+    {data.image && (
+      <div class="aspect-video overflow-hidden">
+        <img 
+          src={data.image.src} 
+          alt={data.title}
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          loading="lazy"
+        />
+      </div>
+    )}
+    <div class="p-4">
+      <h3 class="font-medium text-headings group-hover:text-headings/80 transition-colors">
+        {data.title}
+      </h3>
+      <p class="text-sm text-foreground/70 mt-1 line-clamp-2">
+        {data.description}
+      </p>
+      {data.tech && data.tech.length > 0 && (
+        <div class="flex flex-wrap gap-1 mt-3">
+          {data.tech.map((tech) => (
+            <span class="px-2 py-1 text-xs bg-muted-foreground/20 text-foreground/80 rounded">
+              {tech}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </a>
+</li>
