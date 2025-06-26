@@ -3,6 +3,8 @@ import {
   LANGUAGES,
   DEFAULT_LANGUAGE,
   getLanguageFromNavigator,
+  getLanguageFromURL,
+  updateURLWithLanguage,
 } from '@/lib/languages';
 import type { LanguageCode } from '@/lib/languages';
 
@@ -12,15 +14,23 @@ export default function SwitchLang() {
   const [language, setLanguage] = useState<LanguageCode | null>(null);
 
   useEffect(() => {
-    // Get the initial language from localStorage or browser preference
+    // Get language from URL first, then localStorage, then browser preference
+    const urlLang = getLanguageFromURL();
     const savedLang = localStorage.getItem(LANG_KEY) as LanguageCode;
     const browserLang = getLanguageFromNavigator();
-    const initialLang = savedLang || browserLang;
+    
+    // Priority: URL > localStorage > browser
+    const initialLang = urlLang || savedLang || browserLang;
 
     // Apply the language to document
     document.documentElement.lang = initialLang;
 
     setLanguage(initialLang);
+    
+    // Update URL if it doesn't match the detected language
+    if (urlLang === null && initialLang) {
+      updateURLWithLanguage(initialLang);
+    }
   }, []);
 
   const toggleLanguage = () => {
@@ -30,6 +40,7 @@ export default function SwitchLang() {
     setLanguage(newLang);
     localStorage.setItem(LANG_KEY, newLang);
     document.documentElement.lang = newLang;
+    updateURLWithLanguage(newLang);
   };
 
   // Don't render anything until we know the language
