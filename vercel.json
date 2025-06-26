@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/en", "destination": "/en/index.html" },
+    { "source": "/ko", "destination": "/ko/index.html" },
+    { "source": "/toy-projects", "destination": "/toy-projects/index.html" },
+    { "source": "/writing", "destination": "/writing/index.html" }
+  ]
+}
