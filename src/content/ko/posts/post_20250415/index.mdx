@@ -1,0 +1,46 @@
+---
+title: Why MUI and shadcn/ui Shouldn't Coexist
+date: 2025-04-21
+seo:
+  title: Why MUI and shadcn/ui Shouldn't Coexist in Your Next.js Project
+  description: 'Learn why mixing Material-UI and shadcn/ui is problematic and what alternatives exist'
+  tag: Solo Frontend Developers' Survival Journal
+  type: article, nextjs, frontend, mui, shadcn, tailwindcss
+  keywords: blog code
+---
+
+## The Great UI Framework Clash
+
+As a frontend developer exploring modern UI libraries, I attempted to integrate both Material-UI (MUI) and shadcn/ui in a Next.js project. What followed was a deep dive into why these two libraries fundamentally don't play well together.
+
+### The Fundamental Incompatibility
+
+MUI and shadcn/ui take completely different approaches to styling:
+
+- **MUI**: Uses CSS-in-JS (Emotion) with generated class names
+- **shadcn/ui**: Uses Tailwind CSS with utility classes
+
+Their styling systems conflict at the architectural level, making coexistence painful rather than productive.
+
+### Attempted Solutions
+
+1. **Wrapper Components**
+   - Created isolated wrappers with CSS resets
+   - Result: Temporary fixes that broke easily
+
+2. **Manual !important Overrides**
+   - Added ! to Tailwind classes (e.g., !border-red-800)
+   - Result: Proved specificity issues but wasn't maintainable
+
+3. **Tailwind important Config**
+   - Set `important: true` in tailwind.config.js
+   - Result: Failed due to fundamental CSS methodology differences
+
+### Key Takeaways
+
+➡️ **Don't mix them** unless absolutely necessary for specific components
+➡️ Their styling architectures are fundamentally incompatible
+➡️ Choose one approach (CSS-in-JS or utility classes) per project
+➡️ If you must use both, isolate them completely in separate parts of your app
+
+In the end, I realized that forcing these libraries to work together creates more problems than it solves. It's better to commit to one styling methodology per project for maintainability and consistency.

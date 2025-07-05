@@ -1,28 +1,31 @@
 ---
-import { getCollection, getEntry } from 'astro:content';
+import { getEntry } from 'astro:content';
 import Author from '@/components/ui/Author.astro';
 import Container from '@/components/Container.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ProjectPreview from '@/components/ui/ProjectPreview.astro';
-import { DEFAULT_CONFIGURATION } from '@/lib/constants';
+import { getLocalizedAuthor } from '@/lib/constants';
+import { getLocalizedContent } from '@/lib/content';
+import { DEFAULT_LANGUAGE } from '@/lib/languages';
 
-const entry = await getEntry('pages', 'toy-projects');
-const projects = await getCollection('projects', ({ data }) => !data.draft);
+const entry = await getEntry('pages-en', 'toy-projects');
+const projects = await getLocalizedContent('projects', DEFAULT_LANGUAGE);
+const filteredProjects = projects.filter(({ data }) => !data.draft);
 
-console.log('Projects found:', projects.length);
-console.log('Projects data:', projects.map(p => ({ id: p.id, title: p.data.title })));
+console.log('Projects found:', filteredProjects.length);
+console.log('Projects data:', filteredProjects.map(p => ({ id: p.id, title: p.data.title })));
 ---
 
 <BaseLayout seo={entry?.data.seo}>
   <Container as='section' class='py-6'>
-    <Author {...DEFAULT_CONFIGURATION.author} />
+    <Author {...getLocalizedAuthor(DEFAULT_LANGUAGE)} />
   </Container>
   <Container as='section' class='py-6'>
     <div class="flex flex-col gap-6">
       <!-- <span class="text-headings">Toy Project</span> -->
-      {projects.length > 0 ? (
+      {filteredProjects.length > 0 ? (
         <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <ProjectPreview entry={project} />
           ))}
         </ul>

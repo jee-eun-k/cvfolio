@@ -1,0 +1,62 @@
+---
+title: "Next.js State Management: Preserving URL Parameters Between Client and Server Components"
+date: 2025-04-01
+draft: false
+seo:
+  title: "Next.js State Management: Preserving URL Parameters Between Client and Server Components"
+  description: 'Learn how to preserve URL parameters during navigation in Next.js without using external libraries'
+  tag: "DevOps Debugging Stories"
+  type: article, nextjs, frontend
+  keywords: nextjs, url parameters, state management
+---
+
+## Next.js State Management: Preserving URL Parameters Between Client and Server Components
+
+As a solo frontend developer on my first production Next.js project, I faced a challenge: preserving URL parameters during navigation without using external libraries (our project constraints didn't allow for additional dependencies). Here's how I solved it using only built-in browser and Next.js features.
+
+### The Two-Part Challenge
+
+1. **Client-to-Client**: Keep URL parameters when navigating between pages (both programmatic and browser back/forward)
+2. **Client-to-Server**: Pass these parameters reliably to server components
+
+### The Navigation Gap Problem
+
+Next.js handles navigation in two distinct ways:
+1. **Programmatic Navigation** (router.push/replace)
+   - Our code runs, allowing parameter control
+2. **Browser Navigation** (back/forward buttons)
+   - Browser loads URLs directly from history
+   - Our parameter-handling code never executes
+   - State gets lost
+
+### The Solution: Built-in Storage + URL Parameters
+
+Without access to state management libraries, I leveraged three native mechanisms:
+1. **For Client-to-Client Persistence**: SessionStorage
+   - SessionStorage proved superior to cookies for navigation state:
+     - Persists only during the current session (perfect for navigation context)
+     - Works with browser back/forward navigation
+     - Doesn't affect HTTP request size
+     - Provides clean separation from long-term preferences
+2. **For Client-to-Server Communication**: URL Parameters
+   - URL parameters are the ideal messenger to server components:
+     - Server components receive them automatically via searchParams
+     - They respect Next.js's stateless server component design
+     - They work perfectly with Next.js caching
+     - They're visible in the address bar for easy debugging
+
+### Implementation Strategy
+
+1. **Before Page Unload**: Store parameters in sessionStorage using the beforeunload event
+2. **During Programmatic Navigation**: Add parameters directly to the URL
+3. **After Browser Navigation**: Check sessionStorage and restore parameters if needed using a client component wrapper
+This approach creates a reliable state bridge across all navigation scenarios without external dependencies.
+
+### Key Takeaways
+
+This experience taught me important lessons about Next.js architecture:
+1. Context boundaries between client/server require different state strategies
+2. Different navigation methods need different handling approaches
+3. Native storage mechanisms can be powerful when used purposefully
+
+For my next project, I'm evaluating more robust solutions like Zustand, Jotai, or React Context with reducers, since we'll have more flexibility with dependencies. But this native approach proved that you can solve complex state problems with just the platform basics when needed.

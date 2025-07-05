@@ -1,7 +1,39 @@
 ---
-// Import and re-export everything from the main index page
-import Index from './index.astro';
-export { getStaticPaths } from './index.astro';
+import { getEntry } from 'astro:content';
+import Author from '@/components/ui/Author.astro';
+import Container from '@/components/Container.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProjectPreview from '@/components/ui/ProjectPreview.astro';
+import { getLocalizedAuthor } from '@/lib/constants';
+import { getLocalizedContent } from '@/lib/content';
+
+const entry = await getEntry('pages-en', 'toy-projects');
+const projects = await getLocalizedContent('projects', 'en');
+const filteredProjects = projects.filter(({ data }) => !data.draft);
+
+console.log('Projects found:', filteredProjects.length);
+console.log('Projects data:', filteredProjects.map(p => ({ id: p.id, title: p.data.title })));
 ---
 
-<Index />
+<BaseLayout seo={entry?.data.seo}>
+  <Container as='section' class='py-6'>
+    <Author {...getLocalizedAuthor('en')} />
+  </Container>
+  <Container as='section' class='py-6'>
+    <div class="flex flex-col gap-6">
+      <!-- <span class="text-headings">Toy Project</span> -->
+      {filteredProjects.length > 0 ? (
+        <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((project) => (
+            <ProjectPreview entry={project} />
+          ))}
+        </ul>
+      ) : (
+        <div class="text-center py-12">
+          <p class="text-foreground/70 text-lg">Coming soon! Stay tuned for exciting toy projects.</p>
+          <p class="text-foreground/50 text-sm mt-2">I'm working on some fun experiments to share with you.</p>
+        </div>
+      )}
+    </div>
+  </Container>
+</BaseLayout>

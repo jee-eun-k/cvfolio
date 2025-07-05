@@ -1,0 +1,68 @@
+---
+title: "The Mystery of the 404: Debugging Nginx and Next.js Routing Conflicts"
+date: 2025-03-01
+seo:
+  title: Debugging Nginx and Next.js Routing Conflicts
+  description: 'How I solved a tricky production 404 error caused by Nginx configuration'
+  tag: DevOps Debugging Stories
+  type: article, nextjs, nginx, deployment
+  keywords: nginx nextjs debugging 404
+---
+
+## The Case of the Missing Page
+
+As a frontend developer dipping my toes into DevOps, I encountered a puzzling scenario:
+
+- ✅ Feature worked perfectly in development
+- ✅ Local production builds worked fine
+- ❌ Production deployment returned 404 errors
+
+### Initial Investigation
+
+1. **Verified the build**: Rebuilt locally - still working
+2. **Checked server logs**: Requests weren't reaching Next.js server
+3. **Suspected Nginx**: The common denominator between working/non-working environments
+
+### The Root Cause
+
+The issue stemmed from:
+
+- Next.js route: `/pseudo-route`
+- API endpoint: `/api/pseudo-route`
+
+A security rule in Nginx was blocking both due to similar path patterns.
+
+## Technical Deep Dive
+
+### Problematic Nginx Configuration
+```nginx
+location pseudo-route/ {  # Overly broad match
+   return 404;
+}
+```
+
+### The Solution
+
+1. Made the Nginx rule more specific:
+```nginx
+location = /api/pseudo-route {  # Exact match only
+   # API-specific rules
+}
+```
+
+2. Added proper routing for Next.js pages:
+```nginx
+location / {
+    proxy_pass http://nextjs_server;
+    # Other proxy settings...
+}
+```
+
+## Key Takeaways
+
+➡️ **Be specific** with Nginx location matching
+➡️ **Test routing** in production-like environments
+➡️ **Check proxy passes** when using application servers
+➡️ **Document special routes** for future maintenance
+
+This experience taught me the importance of understanding how frontend and infrastructure configurations interact in production environments.

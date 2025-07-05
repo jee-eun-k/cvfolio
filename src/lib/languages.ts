@@ -48,5 +48,40 @@ export const updateURLWithLanguage = (language: LanguageCode) => {
   // Add new language suffix
   const newPath = basePath === '/' ? `/${language}` : `${basePath}/${language}`;
   
-  window.history.replaceState({}, '', newPath);
+  // Direct navigation to the new path
+  window.location.href = newPath;
+};
+
+// Content fetching utilities
+export const getCollectionName = (baseCollection: string, language: LanguageCode): string => {
+  return `${baseCollection}-${language}`;
+};
+
+export const getCurrentLanguage = (): LanguageCode => {
+  // Check URL first
+  const urlLang = getLanguageFromURL();
+  if (urlLang) return urlLang;
+  
+  // Check localStorage
+  if (typeof window !== 'undefined') {
+    const storedLang = localStorage.getItem('language') as LanguageCode;
+    if (storedLang && LANGUAGES[storedLang]) return storedLang;
+  }
+  
+  // Check browser preference
+  const browserLang = getLanguageFromNavigator();
+  if (browserLang) return browserLang;
+  
+  // Default fallback
+  return DEFAULT_LANGUAGE;
+};
+
+export const getLanguageFromPath = (path: string): LanguageCode => {
+  if (path.endsWith('/ko') || path.includes('/ko/')) {
+    return 'ko';
+  }
+  if (path.endsWith('/en') || path.includes('/en/')) {
+    return 'en';
+  }
+  return DEFAULT_LANGUAGE;
 };

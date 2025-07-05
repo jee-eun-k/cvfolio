@@ -8,6 +8,7 @@ import Head from '@/components/partials/Head.astro';
 import SwitchTheme from '@/components/SwitchTheme.tsx';
 import SwitchLang from '@/components/SwitchLang.tsx';
 import DownloadCV from '@/components/DownloadCV';
+import LanguageAwareLinks from '@/components/LanguageAwareLinks.tsx';
 
 interface Props {
   seo?: Seo
@@ -27,5 +28,6 @@ const { seo } = Astro.props;
     <DownloadCV client:only="react" />
     <SwitchTheme client:only="react" />
     <SwitchLang client:only="react" />
+    <LanguageAwareLinks client:only="react" />
   </body>
 </html>

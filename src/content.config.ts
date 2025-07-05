@@ -19,16 +19,17 @@ const seoSchema = (image: ImageFunction) =>
     image: image().optional(),
   }).merge(seoSchemaWithoutImage);
 
-const pageCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/pages' }),
+// English collections
+const pageCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/pages' }),
   schema: ({ image }) => z.object({
     title: z.string(),
     seo: seoSchema(image),
   }),
 });
 
-const linkCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.yml', base: './src/content/links' }),
+const linkCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.yml', base: './src/content/en/links' }),
   schema: z.object({
     label: z.string(),
     name: z.string(),
@@ -36,8 +37,8 @@ const linkCollection = defineCollection({
   }),
 });
 
-const jobCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/jobs' }),
+const jobCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/jobs' }),
   schema: z.object({
     title: z.string(),
     company: z.string(),
@@ -48,8 +49,8 @@ const jobCollection = defineCollection({
   }),
 });
 
-const talkCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/talks' }),
+const talkCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/talks' }),
   schema: z.object({
     title: z.string(),
     year: z.number(),
@@ -59,8 +60,8 @@ const talkCollection = defineCollection({
   }),
 });
 
-const postCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/posts' }),
+const postCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/posts' }),
   schema: ({ image }) => z.object({
     title: z.string(),
     date: z.date(),
@@ -70,8 +71,72 @@ const postCollection = defineCollection({
   }),
 });
 
-const projectCollection = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/projects' }),
+const projectCollectionEn = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/projects' }),
+  schema: ({ image }) => z.object({
+    title: z.string(),
+    description: z.string(),
+    image: image().optional(),
+    url: z.string(),
+    tech: z.array(z.string()).optional(),
+    draft: z.boolean().optional().default(false),
+  }),
+});
+
+// Korean collections
+const pageCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/pages' }),
+  schema: ({ image }) => z.object({
+    title: z.string(),
+    seo: seoSchema(image),
+  }),
+});
+
+const linkCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.yml', base: './src/content/ko/links' }),
+  schema: z.object({
+    label: z.string(),
+    name: z.string(),
+    url: z.string(),
+  }),
+});
+
+const jobCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/jobs' }),
+  schema: z.object({
+    title: z.string(),
+    company: z.string(),
+    location: z.string(),
+    from: z.number(),
+    to: z.number().or(z.enum(['Now'])),
+    url: z.string(),
+  }),
+});
+
+const talkCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/talks' }),
+  schema: z.object({
+    title: z.string(),
+    year: z.number(),
+    event: z.string(),
+    location: z.string(),
+    url: z.string(),
+  }),
+});
+
+const postCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/posts' }),
+  schema: ({ image }) => z.object({
+    title: z.string(),
+    date: z.date(),
+    draft: z.boolean().optional().default(false),
+    image: image().optional(),
+    seo: seoSchema(image),
+  }),
+});
+
+const projectCollectionKo = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/projects' }),
   schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string(),
@@ -83,10 +148,19 @@ const projectCollection = defineCollection({
 });
 
 export const collections = {
-  pages: pageCollection,
-  links: linkCollection,
-  jobs: jobCollection,
-  talks: talkCollection,
-  posts: postCollection,
-  projects: projectCollection,
+  // English collections
+  'pages-en': pageCollectionEn,
+  'links-en': linkCollectionEn,
+  'jobs-en': jobCollectionEn,
+  'talks-en': talkCollectionEn,
+  'posts-en': postCollectionEn,
+  'projects-en': projectCollectionEn,
+  
+  // Korean collections
+  'pages-ko': pageCollectionKo,
+  'links-ko': linkCollectionKo,
+  'jobs-ko': jobCollectionKo,
+  'talks-ko': talkCollectionKo,
+  'posts-ko': postCollectionKo,
+  'projects-ko': projectCollectionKo,
 };

@@ -3,9 +3,13 @@ import Container from '@/components/Container.astro';
 
 const pathname = Astro.url.pathname;
 
-const isHomePage = pathname === '/';
+// Handle language-specific paths
+const isHomePage = pathname === '/' || pathname === '/en' || pathname === '/ko';
 const isWritingPage = pathname.startsWith('/writing');
 const isToyProjectsPage = pathname.startsWith('/toy-projects');
+
+// Detect current language from path
+const isKorean = pathname.endsWith('/ko') || pathname.includes('/ko/');
 
 ---
 
@@ -18,21 +22,21 @@ const isToyProjectsPage = pathname.startsWith('/toy-projects');
             'font-medium transition-colors block px-5 py-2',
             'hover:text-headings',
             isHomePage && 'text-headings bg-muted-foreground/40 rounded-full',
-          ]}>Home</a>
+          ]}>{isKorean ? '홈' : 'Home'}</a>
         </li>
         <li>
           <a href="/writing" class:list={[
             'font-medium transition-colors block px-5 py-2',
             'hover:text-headings',
             isWritingPage && 'text-headings bg-muted-foreground/40 rounded-full',
-          ]}>Writing</a>
+          ]}>{isKorean ? '블로그' : 'Writing'}</a>
         </li>
         <li>
            <a href="/toy-projects" class:list={[
             'font-medium transition-colors block px-5 py-2',
             'hover:text-headings',
             isToyProjectsPage && 'text-headings bg-muted-foreground/40 rounded-full',
-          ]}>Toy Projects</a>
+          ]}>{isKorean ? '토이 프로젝트' : 'Toy Projects'}</a>
         </li>
       </ul>
     </nav>

@@ -1,28 +1,29 @@
 ---
-import { getEntry, getCollection, render } from 'astro:content';
+import { getEntry, render } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import Author from '@/components/ui/Author.astro';
-import { DEFAULT_CONFIGURATION } from '@/lib/constants';
+import { getLocalizedAuthor } from '@/lib/constants';
 import WorkExperience from '@/components/ui/WorkExperience.astro';
 import { sortJobsByDate } from '@/lib/utils';
 import Talk from '@/components/ui/Talk.astro';
+import { getLocalizedContent } from '@/lib/content';
 
-// const entry = await getEntry('pages', 'homepage');
-const entry = await getEntry('pages', 'homepage');
+// Get content in English
+const entry = await getEntry('pages-en', 'homepage');
 const { Content } = await render(entry);
 
-const links = await getCollection('links');
-const jobs = await getCollection('jobs');
+const links = await getLocalizedContent('links', 'en');
+const jobs = await getLocalizedContent('jobs', 'en');
 const sortedJobs = sortJobsByDate(jobs);
 
 console.log(jobs);
-const talks = await getCollection('talks');
+const talks = await getLocalizedContent('talks', 'en');
 ---
 
 <BaseLayout seo={entry?.data.seo}>
   <Container as='section' class='py-6'>
-    <Author {...DEFAULT_CONFIGURATION.author} />
+    <Author {...getLocalizedAuthor('en')} />
   </Container>
 
   <Container as='section' class='py-6'>

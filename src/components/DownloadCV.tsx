@@ -1,11 +1,17 @@
 import { Download } from 'lucide-react';
+import { getLanguageFromURL } from '@/lib/languages';
 
 export default function DownloadCV() {
   const handleDownloadCV = () => {
+    const lang = getLanguageFromURL();
+
     // Convert Google Drive view link to direct download link
-    const fileId = '1hYYP5LWxBBnkL7rYP2PiWymSdU-RHe-U';
+    const fileId =
+      lang === 'en'
+        ? '1hYYP5LWxBBnkL7rYP2PiWymSdU-RHe-U'
+        : '1-qRRJ_VpRnXfec95yu-n6gIrH2FzjQ0Q';
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-    
+
     // Create a temporary link element and trigger download
     const link = document.createElement('a');
     link.href = downloadUrl;

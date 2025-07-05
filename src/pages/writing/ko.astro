@@ -1,7 +1,27 @@
 ---
-// Import and re-export everything from the main index page
-import Index from './index.astro';
-export { getStaticPaths } from './index.astro';
+import { getEntry } from 'astro:content';
+import Author from '@/components/ui/Author.astro';
+import Container from '@/components/Container.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getLocalizedAuthor } from '@/lib/constants';
+import PostPreview from '@/components/ui/PostPreview.astro';
+import { getLocalizedContent } from '@/lib/content';
+
+const entry = await getEntry('pages-ko', 'writing');
+const allPosts = await getLocalizedContent('posts', 'ko');
+const posts = allPosts.filter(({ data }) => !data.draft);
 ---
 
-<Index />
+<BaseLayout seo={entry?.data.seo}>
+  <Container as='section' class='py-6'>
+    <Author {...getLocalizedAuthor('ko')} />
+  </Container>
+  <Container as='section' class='py-6'>
+    <div class="flex flex-col gap-6">
+      <span class="text-headings">최신 포스트</span>
+      <ul class="flex flex-col gap-3">
+        {posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime()).map((post) => <PostPreview entry={post} />)}
+      </ul>
+    </div>
+  </Container>
+</BaseLayout>
