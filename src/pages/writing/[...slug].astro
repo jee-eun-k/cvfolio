@@ -2,49 +2,202 @@
 import Container from '@/components/Container.astro';
 import Avatar from '@/components/ui/Avatar.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { DEFAULT_CONFIGURATION } from '@/lib/constants';
-import { Image } from 'astro:assets';
 import { getCollection, render } from 'astro:content';
+import { DEFAULT_CONFIGURATION } from '@/lib/constants';
 
-export async function getStaticPaths() {
-  const entries = await getCollection('posts');
-
-  return entries.map((entry) => ({
-    params: { slug: entry.id },
-    props: { entry },
-  }));
+// Define a more flexible type for blog posts
+interface BlogPost {
+  id: string;
+  slug: string;
+  body: string;
+  collection: string;
+  data: {
+    title: string;
+    description?: string;
+    date: Date | string;
+    updated?: Date | string;
+    draft?: boolean;
+    image?: string;
+    seo?: {
+      title?: string;
+      description?: string;
+      tag?: string;
+    };
+  };
 }
 
-const { entry } = Astro.props;
-const { Content } = await render(entry);
+export async function getStaticPaths() {
+  try {
+    // Get all entries from both English and Korean collections
+    const enEntries = await getCollection('posts-en');
+    const koEntries = await getCollection('posts-ko');
+    
+    // No need to filter by type since these are already post collections
+    const enPosts = enEntries;
+    const koPosts = koEntries;
+    
+    // Log for debugging
+    console.log(`Found ${enPosts.length} English posts and ${koPosts.length} Korean posts`);
+    
+    // Debug post details
+    if (enPosts.length > 0) {
+      console.log('First English post:', {
+        id: enPosts[0].id,
+        collection: enPosts[0].collection,
+        title: enPosts[0].data.title
+      });
+    }
+    
+    // Filter out draft posts in production for each language
+    const publishedEnPosts = enPosts.filter((post) => {
+      return !(import.meta.env.PROD && post.data.draft === true);
+    });
+    
+    const publishedKoPosts = koPosts.filter((post) => {
+      return !(import.meta.env.PROD && post.data.draft === true);
+    });
+    
+    console.log(`Found ${publishedEnPosts.length} English and ${publishedKoPosts.length} Korean published posts`);
+    
+    // Generate paths for English posts (default route)
+    const enPaths = publishedEnPosts.map((post) => {
+      // The post ID should be something like 'post_20250301/index' or 'post_20250301'
+      // We want to extract just the unique identifier part for the URL
+      const parts = post.id.split('/');
+      
+      // If the path includes a directory structure, get the post directory name
+      // For example: extract 'post_20250301' from 'post_20250301/index'
+      let slug = '';
+      if (parts.length > 1) {
+        // If the structure is post_20250301/index, we want post_20250301
+        slug = parts[0];
+      } else {
+        // Otherwise just use the ID itself without any extension
+        slug = post.id.replace(/\.[^/.]+$/, '');
+      }
+      
+      console.log(`Generating English path for ${post.id} -> /writing/${slug}`);
+      
+      return {
+        params: { slug },
+        props: { post },
+      };
+    });
+
+    // Generate paths for Korean posts (with /ko/ prefix)
+    const koPaths = publishedKoPosts.map((post) => {
+      const parts = post.id.split('/');
+      
+      let slug = '';
+      if (parts.length > 1) {
+        slug = parts[0];
+      } else {
+        slug = post.id.replace(/\.[^/.]+$/, '');
+      }
+      
+      console.log(`Generating Korean path for ${post.id} -> /writing/ko/${slug}`);
+      
+      return {
+        params: { slug: `ko/${slug}` },
+        props: { post },
+      };
+    });
+
+    // Return all paths (English default + Korean with ko/ prefix)
+    return [...enPaths, ...koPaths];
+  } catch (error) {
+    console.error('Error in getStaticPaths:', error);
+    return [];
+  }
+}
+
+// Get the current post from props
+const { post } = Astro.props;
+
+// Debug post structure
+console.log('Post object structure:', {
+  id: post.id,
+  collection: post.collection,
+  data: post.data,
+  keys: Object.keys(post),
+});
+
+// Render the post content
+const { Content } = await render(post);
+
+
 ---
 
-<BaseLayout seo={entry.data.seo}>
-  <Container as='section'>
-    <article class="flex flex-col gap-6">
-      <div class="flex flex-col gap-2">
-        <a href="/writing" class="transition-all text-muted-foreground hover:text-foreground pb-4 text-sm w-max">
-          Back to writing
-        </a>
-        <div class="flex flex-col gap-1.5">
-          <Avatar />
-          <span class="text-foreground">{DEFAULT_CONFIGURATION.author.name}</span>
+<BaseLayout seo={{
+  title: post.data.seo?.title || post.data.title,
+  description: post.data.seo?.description || post.data.description || '',
+  canonicalUrl: new URL(Astro.url.pathname, Astro.site).toString(),
+}}>
+  <Container>
+    <div class="mx-auto max-w-3xl">
+      <article>
+        <header class="mb-8">
+          <h1 class="mb-4 text-4xl font-bold">{post.data.title}</h1>
+          
+          <div class="mb-6 flex items-center gap-4">
+            <div class="h-10 w-10">
+              <Avatar />
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm font-medium">
+                {DEFAULT_CONFIGURATION.author.name}
+              </span>
+              <span class="text-xs text-gray-500">
+                {new Date(post.data.date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                {post.data.updated && (
+                  <span class="ml-2 text-xs text-gray-400">
+                    (Updated: {new Date(post.data.updated).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })})
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+
+          {post.data.image && (
+            <div class="mb-8 overflow-hidden rounded-lg">
+              <img
+                src={post.data.image}
+                alt={post.data.title}
+                class="w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
+        </header>
+
+        <div class="prose prose-invert mx-auto max-w-none pb-8">
+          <Content />
         </div>
-        <h1 class="text-3xl font-semibold text-headings">{entry.data.title}</h1>
-      </div>
-      <!-- {entry.data.image && (
-        <div class="relative aspect-video overflow-hidden rounded-lg">
-          <Image
-            src={entry.data.image}
-            alt={entry.data.title}
-            class="object-cover"
-          />
-        </div>
-      )} -->
-      <div class="prose dark:prose-invert">
-        <Content />
-      </div>
-    </article>
+
+        <footer class="mt-12 border-t border-gray-800 pt-8">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-400">Tags:</span>
+              {post.data.seo?.tag && (
+                <span class="rounded-full bg-gray-800 px-3 py-1 text-xs font-medium text-gray-300">
+                  {post.data.seo.tag}
+                </span>
+              )}
+            </div>
+            <div class="text-sm text-gray-400">
+              <span>Posted in {new Date(post.data.date).getFullYear()}</span>
+            </div>
+          </div>
+        </footer>
+      </article>
+    </div>
   </Container>
 </BaseLayout>
-  

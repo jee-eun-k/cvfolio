@@ -27,10 +27,21 @@ export const getLanguageFromURL = (): LanguageCode | null => {
   
   const pathname = window.location.pathname;
   
+  // Check for blog post URLs with Korean prefix
+  if (pathname.startsWith('/writing/ko/')) {
+    return 'ko';
+  }
+  
+  // Check for regular page language suffixes
   if (pathname.endsWith('/ko')) {
     return 'ko';
   }
   if (pathname.endsWith('/en')) {
+    return 'en';
+  }
+  
+  // For blog posts without /ko/ prefix, assume English
+  if (pathname.startsWith('/writing/') && !pathname.startsWith('/writing/ko/')) {
     return 'en';
   }
   
@@ -42,6 +53,37 @@ export const updateURLWithLanguage = (language: LanguageCode) => {
   
   const currentPath = window.location.pathname;
   
+  // Handle blog post URLs specially
+  if (currentPath.startsWith('/writing/')) {
+    let newPath: string;
+    
+    if (language === 'ko') {
+      // Convert English post to Korean post
+      if (currentPath.startsWith('/writing/ko/')) {
+        // Already a Korean post, no change needed
+        newPath = currentPath;
+      } else {
+        // English post: /writing/post_xxx -> /writing/ko/post_xxx
+        const postSlug = currentPath.replace('/writing/', '');
+        newPath = `/writing/ko/${postSlug}`;
+      }
+    } else {
+      // Convert Korean post to English post
+      if (currentPath.startsWith('/writing/ko/')) {
+        // Korean post: /writing/ko/post_xxx -> /writing/post_xxx
+        const postSlug = currentPath.replace('/writing/ko/', '');
+        newPath = `/writing/${postSlug}`;
+      } else {
+        // Already an English post, no change needed
+        newPath = currentPath;
+      }
+    }
+    
+    window.location.href = newPath;
+    return;
+  }
+  
+  // Handle regular pages with language suffixes
   // Remove existing language suffix
   const basePath = currentPath.replace(/\/(ko|en)$/, '');
   

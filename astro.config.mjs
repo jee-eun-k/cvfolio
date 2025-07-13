@@ -8,7 +8,7 @@ import { remarkReadingTime } from './src/lib/remark.mjs';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://cv.coderdiaz.com',
+  site: 'https://www.jee-eun-k.dev',
   markdown: {
     remarkPlugins: [remarkReadingTime],
     shikiConfig: {
@@ -33,19 +33,19 @@ export default defineConfig({
         cssVariable: '--font-inter',
         provider: 'local',
         variants: [
-          { src: ['./src/assets/fonts/Inter-Regular.woff2'], weight: 400 },
-          { src: ['./src/assets/fonts/Inter-Medium.woff2'], weight: 500 },
-          { src: ['./src/assets/fonts/Inter-SemiBold.woff2'], weight: 600 },
-          { src: ['./src/assets/fonts/Inter-Bold.woff2'], weight: 700 },
-          { src: ['./src/assets/fonts/Inter-ExtraBold.woff2'], weight: 800 },
-          { src: ['./src/assets/fonts/InterVariable.woff2'], weight: 'variable' },
+          { src: ['./src/assets/fonts/Inter-Regular.woff2'], weight: 400, style: 'normal' },
+          { src: ['./src/assets/fonts/Inter-Medium.woff2'], weight: 500, style: 'normal' },
+          { src: ['./src/assets/fonts/Inter-SemiBold.woff2'], weight: 600, style: 'normal' },
+          { src: ['./src/assets/fonts/Inter-Bold.woff2'], weight: 700, style: 'normal' },
+          { src: ['./src/assets/fonts/Inter-ExtraBold.woff2'], weight: 800, style: 'normal' },
+          { src: ['./src/assets/fonts/InterVariable.woff2'], weight: 'variable', style: 'normal' },
         ],
       },
       {
         name: 'InterVariable',
         cssVariable: '--font-inter-variable',
         provider: 'local',
-        variants: [{ src: ['./src/assets/fonts/InterVariable.woff2'], weight: 'variable' }],
+        variants: [{ src: ['./src/assets/fonts/InterVariable.woff2'], weight: 'variable', style: 'normal' }],
       },
     ],
   },
