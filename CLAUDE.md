@@ -91,6 +91,39 @@ seo:
 - **Technical content**: Include code examples, configurations, and step-by-step solutions
 - **Takeaways**: End with key learnings or actionable insights
 
+
+### Tone and Perspective Guidelines
+
+**Point of View**: Write as a solo frontend developer navigating real-world challenges
+- "As a frontend developer dipping my toes into DevOps..."
+- "Being the only frontend dev on the team, I had to figure this out myself..."
+- "Without a backend teammate to ask, I dove into the server logs..."
+
+**Storytelling Approach**: Present debugging/problem-solving as a journey
+- Start with the mystery: "I encountered a puzzling scenario..."
+- Show the investigation process: "Initial Investigation", "The Root Cause"
+- Document failed attempts: "First, I tried X... but that didn't work"
+- Celebrate the breakthrough: "The Solution", "What finally worked"
+
+**Easy-going Tone Examples**:
+- Use conversational language: "dipping my toes into", "puzzling scenario"
+- Show vulnerability: "I was stumped", "This had me scratching my head"
+- Admit mistakes: "I initially thought...", "My first approach was wrong"
+- Share learning moments: "This taught me...", "Now I know better"
+
+**Technical Narrative Structure**:
+1. **The Problem**: Set the scene with what went wrong
+2. **Investigation**: Document your debugging process step-by-step
+3. **Attempts**: Show both failed and successful approaches
+4. **Solution**: Explain what finally worked and why
+5. **Reflection**: Share lessons learned and future prevention
+
+**Voice Characteristics**:
+- Humble and honest about not knowing everything
+- Curious and methodical in problem-solving approach
+- Practical focus on real-world solutions
+- Encouraging tone for other solo developers facing similar challenges
+
 ### Bilingual Content Strategy
 - Translate core content while adapting for cultural context
 - Technical terms can remain in English if commonly used in Korean tech community
