@@ -1,0 +1,35 @@
+---
+title: "Frontend Keycloak Adoption: A Journey from JWT to SSO"
+date: 2025-07-13
+draft: false
+seo:
+  title: "Implementing Keycloak SSO & Access Management for an MSA Architecture - Part 1"
+  description: "Sharing lessons learned while transitioning to Keycloak SSO for an MSA architecture."
+  tag: "Technical Experience"
+  type: "technology"
+  keywords: "Keycloak SSO JWT Authentication React Next.js Frontend"
+---
+
+As part of a project enhancement initiative, we are in the process of transitioning our existing JWT-based authentication system to Keycloak SSO. Although we are still in the early stages of adoption, I wanted to document and share the journey so far.
+
+Our previous system had a simple architecture, communicating 1-to-1 with a single backend server that managed token issuance. However, our decision to shift to a Microservices Architecture (MSA) required a complete re-evaluation of our menu and permission management systems, alongside the adoption of Keycloak SSO.
+
+Early in my tenure, I had already improved the project by managing menu data dynamically from a database. As the project grew and the number of managed pages increased, it became clear to both myself and our backend developer that we needed a more granular access control system. The existing model, which assigned permissions to user groups on a per-page basis, was inefficient. It had a significant limitation: we had to duplicate an entire page just to change a single button, which was not a reusable approach.
+
+Our newly designed system works as follows: After a user logs in via Keycloak, the frontend uses the issued token to request a list of menus and fine-grained permissions from a dedicated authorization server. The response data is then used to create a React Context. On every page render, the user dynamically sees only the menus and components that their permissions allow. This enables a flexible permission system that closely resembles **Attribute-Based Access Control (ABAC)**.
+
+Furthermore, since Keycloak centrally handles token expiration and renewal, our frontend's token management logic is significantly simplified. This creates a scalable foundation that will maximize the benefits of SSO when we connect other backend services or new frontend projects in the future.
+
+### Current Challenges and Potential Solutions
+
+Of course, this transition has introduced new challenges.
+
+**1. Validating Dynamic Menu Data**
+Our first challenge is: 'How can we trust the validity of the dynamic menu data received from the authorization server?' We currently merge hard-coded default menus (like the dashboard) with the dynamic menus, but we are not yet certain if this is the optimal approach.
+
+As a solution, we are considering implementing **schema-based validation** on the frontend. By using libraries like `Zod` or `Yup`, we can validate at runtime that the API response conforms to our defined schema, thereby preventing rendering errors caused by unexpected data structures.
+
+**2. Decoupling Menu Structure from Directory Structure**
+Our second challenge is: 'How can we reduce the overhead of modifying our Next.js directory structure every time the menu hierarchy changes as the project evolves?'
+
+To address this, we are exploring the aggressive use of Next.js's **Dynamic Routing** features. For instance, by implementing a single **Catch-all Route** like `pages/app/[[...slug]].js`, we can handle most application URLs from one file. This page would dynamically interpret the URL `slug`, map it to our authorization data, and render the appropriate layout and components. This approach decouples the menu structure from the file system, creating a flexible architecture where backend menu changes require minimal-to-no frontend code modifications.
