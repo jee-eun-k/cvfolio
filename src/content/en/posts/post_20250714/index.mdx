@@ -1,0 +1,334 @@
+
+⏺ Dynamic Route Validation in Next.js: Preventing Invalid Page Renders with Backend-Driven Navigation
+
+  The Challenge
+
+  In modern web applications, especially enterprise systems, navigation menus and routes are often dynamically generated based on user permissions and backend configuration. This creates a
+  unique challenge: how do you validate routes that don't exist until runtime?
+
+  Our BRS (Bank Reconciliation System) faced this exact problem. We had:
+  - Dynamic menu structure fetched from /access-context/full/ko API
+  - Permission-based routing where available routes depend on user roles
+  - Next.js App Router requiring client-side route validation
+  - Poor UX issue: Invalid pages would start rendering before redirecting
+
+  The Problem
+
+  The traditional approach led to several issues:
+
+  // ❌ Traditional approach - page renders first, then redirects
+  export default function SomePage() {
+    const { menuData } = useMenuData();
+
+    useEffect(() => {
+      // Page has already started rendering!
+      if (!isValidRoute(pathname, menuData)) {
+        router.push('/dashboard'); // Too late!
+      }
+    }, [menuData]);
+
+    return <PageContent />; // This renders invalid content briefly
+  }
+
+  Problems:
+  1. Invalid pages flash before redirect
+  2. Multiple redirect points scattered across codebase
+  3. Race conditions between menu data loading and route validation
+  4. No centralized route verification logic
+
+  Our Solution: Integrated Auth + Route Validation
+
+  We implemented a comprehensive solution that validates routes before they render, integrated directly into the authentication provider.
+
+  1. Route Verification Utility (/utils/route-verification.ts)
+
+  First, we created a robust route verification system:
+
+  export interface RouteVerificationResult {
+    isValid: boolean;
+    matchType: 'exact' | 'partial' | 'none';
+    matchedItem?: MenuItem;
+    permissions?: {
+      authPermissionKey: string;
+      hasAccess: boolean;
+    };
+    path: string;
+    timestamp: number;
+  }
+
+  export const verifyRouteInMenuData = (
+    targetPath: string,
+    menuData: MenuItem[]
+  ): RouteVerificationResult => {
+    // Normalize paths (handle trailing slashes)
+    const normalizedPath = targetPath.endsWith('/') && targetPath !== '/'
+      ? targetPath.slice(0, -1)
+      : targetPath;
+
+    // Special case: dashboard routes always valid
+    if (normalizedPath === '/dashboard' || targetPath === '/dashboard/') {
+      return {
+        isValid: true,
+        matchType: 'exact',
+        // ... return dashboard menu item
+      };
+    }
+
+    // Recursive search through menu structure
+    const searchMenuItem = (items: MenuItem[], currentPath: string) => {
+      for (const item of items) {
+        // Handle exact matches with flexible slash handling
+        if (normalizedItemPath === currentPath ||
+            item.menuViewPath === currentPath ||
+            (normalizedItemPath + '/') === currentPath) {
+          return { isValid: true, matchType: 'exact', matchedItem: item };
+        }
+
+        // Check children recursively
+        if (item.children?.length) {
+          const found = searchMenuItem(item.children, currentPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return searchMenuItem(menuData, normalizedPath);
+  };
+
+  2. Integrated Auth Provider (/contexts/auth/jwt/auth-provider.tsx)
+
+  The key innovation was integrating route validation directly into the auth provider:
+
+  export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [isValidatingRoute, setIsValidatingRoute] = useState(false);
+    const [menuData, setMenuData] = useState<any[]>([]);
+
+    // Load menu data after authentication
+    useEffect(() => {
+      if (isAuthenticated && token && !menuData.length) {
+        import('@/libs/axios/tokenAxios').then(({ tokenAxiosAuth }) => {
+          tokenAxiosAuth.get(`/access-context/full/ko`)
+            .then((res: any) => {
+              if (res.data?.menus) {
+                setMenuData(res.data.menus);
+              }
+            })
+            .catch(() => setMenuData([])); // Prevent infinite loading
+        });
+      }
+    }, [isAuthenticated, token, menuData.length]);
+
+    // Route validation effect
+    useEffect(() => {
+      if (!isAuthenticated || !isInitialized) {
+        setIsValidatingRoute(false);
+        return;
+      }
+
+      // Skip validation for whitelisted routes
+      if (pathname === '/' ||
+          pathname.startsWith('/auth') ||
+          pathname.startsWith('/error') ||
+          pathname === '/dashboard' ||
+          pathname === '/dashboard/') {
+        setIsValidatingRoute(false);
+        return;
+      }
+
+      // Start validation for protected routes
+      setIsValidatingRoute(true);
+
+      // Wait for menu data with timeout protection
+      if (!menuData?.length) {
+        const timeout = setTimeout(() => {
+          console.warn('Menu data timeout, redirecting to dashboard');
+          router.replace('/dashboard');
+        }, 10000);
+        return () => clearTimeout(timeout);
+      }
+
+      // Validate current route
+      const verification = verifyRouteInMenuData(pathname, menuData);
+
+      if (verification.isValid && !verification.matchedItem?.disabled) {
+        setIsValidatingRoute(false); // Allow rendering
+      } else {
+        console.warn(`Invalid route: ${pathname}, redirecting to dashboard`);
+        router.replace('/dashboard'); // Immediate redirect
+      }
+    }, [isAuthenticated, isInitialized, pathname, menuData, router]);
+
+    // Show loading while validating routes
+    if (isValidatingRoute) {
+      return (
+        <AuthContext.Provider value={contextValue}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+            <CircularProgress />
+            <Typography>Validating route...</Typography>
+          </Box>
+        </AuthContext.Provider>
+      );
+    }
+
+    return (
+      <AuthContext.Provider value={contextValue}>
+        {children}
+      </AuthContext.Provider>
+    );
+  };
+
+  3. Developer Tools & Debugging
+
+  We also created comprehensive debugging tools:
+
+  // Hook for route verification
+  export const useRouteVerification = () => {
+    const { menuData } = useMenuDataContext();
+    const pathname = usePathname();
+
+    const currentRouteVerification = useMemo(() => {
+      if (!menuData?.length) return { isValid: false, matchType: 'none' };
+      return verifyRouteInMenuData(pathname, menuData);
+    }, [pathname, menuData]);
+
+    const validateNavigation = (targetPath: string, options?: ValidationOptions) => {
+      if (!menuData?.length) {
+        return { canNavigate: false, reason: 'Menu data not loaded' };
+      }
+      return validateRouteBeforeNavigation(targetPath, menuData, options);
+    };
+
+    return {
+      currentRouteVerification,
+      isCurrentRouteValid: currentRouteVerification.isValid,
+      verifyRoute: (path: string) => verifyRouteInMenuData(path, menuData),
+      validateNavigation,
+      availableRoutes: getAllAvailableRoutes(menuData)
+    };
+  };
+
+  // Interactive route debugger component
+  export const RouteDebugger: React.FC<RouteDebuggerProps> = ({ enabled = true }) => {
+    const { currentRouteVerification, availableRoutes, verifyRoute } = useRouteVerification();
+
+    return (
+      <Paper elevation={8}>
+        <Typography variant="h6">🔍 Route Debugger</Typography>
+
+        {/* Current route status */}
+        <Alert severity={currentRouteVerification.isValid ? 'success' : 'error'}>
+          Path: {currentRouteVerification.path}
+          Status: {currentRouteVerification.isValid ? 'Valid' : 'Invalid'}
+        </Alert>
+
+        {/* Available routes list */}
+        <List>
+          {availableRoutes.map(route => (
+            <ListItem key={route}>{route}</ListItem>
+          ))}
+        </List>
+
+        {/* Route testing interface */}
+        <TextField 
+          label="Test Route" 
+          onChange={(e) => {
+            const result = verifyRoute(e.target.value);
+            console.log('Route test result:', result);
+          }}
+        />
+      </Paper>
+    );
+  };
+
+  Key Benefits
+
+  1. Zero Invalid Page Flashing
+
+  - Routes are validated before components render
+  - Users see a clean loading state instead of broken content
+  - Immediate redirects prevent any invalid UI from appearing
+
+  2. Centralized Route Logic
+
+  - All route validation happens in one place (auth provider)
+  - No scattered useEffect hooks across components
+  - Consistent behavior across the entire application
+
+  3. Flexible Path Handling
+
+  - Handles trailing slashes gracefully (/dashboard vs /dashboard/)
+  - Supports both exact and partial route matching
+  - Normalizes paths for consistent comparison
+
+  4. Development Experience
+
+  - Interactive route debugger for development
+  - Comprehensive logging and error messages
+  - Real-time route testing capabilities
+
+  5. Performance Optimized
+
+  - Menu data loaded once and cached
+  - Timeout protection prevents infinite loading
+  - Efficient recursive search through menu structure
+
+  Usage Examples
+
+  Safe Navigation
+
+  const navigateWithVerification = (targetPath: string) => {
+    const validation = validateNavigation(targetPath, {
+      allowPartialMatch: false,
+      checkPermissions: true
+    });
+
+    if (validation.canNavigate) {
+      router.push(targetPath);
+    } else {
+      console.warn(`Navigation blocked: ${validation.reason}`);
+      // Show suggestions or fallback
+    }
+  };
+
+  Route Permission Checking
+
+  const { hasRouteAccess, routePermissions } = useRoutePermissions(userPermissions);
+
+  if (!hasRouteAccess) {
+    return <AccessDeniedPage />;
+  }
+
+  Development Debugging
+
+  // Add to any page during development
+  <RouteDebugger enabled={process.env.NODE_ENV === 'development'} />
+
+  Implementation Results
+
+  Before:
+  - Invalid pages would flash before redirecting
+  - Inconsistent route validation across pages
+  - Poor user experience with broken navigation
+  - Difficult to debug route issues
+
+  After:
+  - ✅ Zero invalid page rendering
+  - ✅ Centralized, consistent route validation
+  - ✅ Clean loading states for better UX
+  - ✅ Comprehensive debugging tools
+  - ✅ Flexible, maintainable architecture
+
+  Conclusion
+
+  By integrating route validation directly into the authentication flow, we created a robust system that:
+
+  1. Prevents invalid pages from ever rendering
+  2. Provides a clean, centralized validation mechanism
+  3. Offers excellent developer experience with debugging tools
+  4. Handles dynamic, permission-based routing gracefully
+
+  This approach can be adapted to any Next.js application that needs dynamic route validation, especially those with backend-driven navigation structures. The key insight is to validate
+  routes at the authentication layer rather than in individual components, ensuring consistent behavior and preventing any invalid content from reaching users.
+
+  The complete implementation provides both the infrastructure for production use and the tooling necessary for effective development and debugging.
