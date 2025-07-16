@@ -30,6 +30,31 @@ The project uses a sophisticated bilingual content management system:
 - **Projects**: Portfolio projects with descriptions, tech stacks, and images
 - **Talks**: Speaking engagements with event details
 
+### Adding a New Blog Post
+
+When adding a new blog post, follow these steps to ensure it meets the content schema and builds correctly:
+
+1.  **Create a New Directory**: Create a new directory for the post under both `src/content/en/posts/` and `src/content/ko/posts/`. The directory name should follow the format `post_YYYYMMDD`.
+2.  **Create `index.mdx`**: Inside each new directory, create an `index.mdx` file.
+3.  **Add Frontmatter**: At the very beginning of each `index.mdx` file, add the required frontmatter. The site will fail to build without it.
+
+    ```yaml
+    ---
+    title: "Your Post Title"
+    date: YYYY-MM-DD
+    draft: false # Set to true if the post is not ready
+    seo:
+      title: "SEO-friendly Title for the Post"
+      description: "A brief but compelling description of the post for search engines."
+      tag: "Technical Experience" # Or other relevant tag
+      type: "technology" # Or other relevant type
+      keywords: "Keyword1, Keyword2, Keyword3"
+    ---
+    ```
+
+4.  **Write Content**: Add your post content in MDX format below the frontmatter.
+5.  **Bilingual Content**: Ensure that both the English and Korean versions have the frontmatter. You can use the same English text for the Korean version's frontmatter initially and translate it later. The `title` and `date` fields are the most critical for a successful build.
+
 ### Key Architecture Files
 - `src/lib/languages.ts`: Language detection, URL handling, and collection naming
 - `src/lib/content.ts`: Localized content fetching with fallback logic
