@@ -1,0 +1,148 @@
+---
+title: "React Query 캐싱과 서버 사이드 페이징의 함정"
+date: '2025-07-23'
+draft: false
+seo:
+  title: "React Query 캐싱과 서버 사이드 페이징의 함정"
+  description: "React Query로 서버 사이드 페이징을 구현할 때 마주칠 수 있는 캐싱 문제와 해결 방법"
+  tag: "기술 경험"
+  type: "기술"
+  keywords: ["React Query", "서버 사이드 페이징", "캐싱", "페이징", "API 호출"]
+---
+
+## 문제 상황
+
+React Query로 서버 사이드 페이징을 구현하던 중 다음과 같은 문제에 직면했습니다:
+
+- `queryKey`에 `paginationModel`을 포함하면: 페이지 크기 변경은 잘 작동하지만, 페이지 네비게이션이 계속 0으로 초기화됨
+- `queryKey`에서 `paginationModel`을 제거하면: 페이지 네비게이션은 작동하지만, 페이지 크기 변경 시 새로운 API 호출이 발생하지 않음
+
+## 원본 (문제가 있던) 구현 방식
+
+```tsx
+// ❌ 이 방식은 페이지가 계속 초기화되는 문제가 있었음
+const { data, isLoading } = useQuery({
+    queryKey: [
+        'financialFab',
+        bonusMonth,
+        paginationModel, // page와 pageSize를 모두 포함
+    ],
+    queryFn: async () => {
+        const response = await api.get(`/data`, {
+            params: {
+                page: paginationModel.page,
+                size: paginationModel.pageSize,
+            }
+        });
+        return response.data;
+    },
+});
+```
+
+## React Query 캐싱에 대해 배운 점
+
+### 핵심 통찰 #1: QueryKey는 별도의 캐시 항목을 생성함
+
+고유한 `queryKey`마다 완전히 별도의 캐시 항목이 생성됩니다. 예를 들어:
+
+```ts
+// 서로 다른 캐시 항목들:
+['financialFab', '2024-01', { page: 0, pageSize: 10 }]
+['financialFab', '2024-01', { page: 1, pageSize: 10 }]
+['financialFab', '2024-01', { page: 0, pageSize: 20 }]
+```
+
+이들은 서로 관련이 없는 별개의 캐시 항목입니다.
+
+### 핵심 통찰 #2: 서버 사이드 페이징 ≠ 클라이언트 사이드 캐싱
+
+서버 사이드 페이징은 다음을 의미합니다:
+- 모든 페이지는 API 호출이 필요한 다른 데이터입니다
+- 페이지 크기 변경마다 다른 데이터를 요청해야 합니다
+- React Query의 캐싱은 동일한 데이터셋을 재사용할 때 가장 효과적입니다
+
+이로 인해 근본적인 불일치가 발생합니다!
+
+### 핵심 통찰 #3: 페이지와 페이지 크기는 다른 캐싱 전략이 필요
+
+```tsx
+// 페이지 변경: 새 API 호출이 필요하지만, 캐시를 재사용할 수는 있음
+// 페이지 크기 변경: 반드시 새 API 호출이 필요하며, 캐시는 분리되어야 함
+
+// ✅ queryKey에는 pageSize만 포함
+queryKey: ['financialFab', bonusMonth, paginationModel.pageSize]
+
+// ✅ 또는 별도로 처리
+const { refetch } = useQuery({
+    queryKey: ['financialFab', bonusMonth],
+    // ...
+});
+
+useEffect(() => {
+    refetch(); // 페이지 크기 변경 시에만 수동으로 재요청
+}, [paginationModel.pageSize]);
+```
+
+## 발견한 더 나은 접근 방식
+
+### 접근 방식 1: queryKey에는 pageSize만 포함하기
+
+```tsx
+const { data, isLoading } = useQuery({
+    queryKey: [
+        'financialFab',
+        bonusMonth,
+        paginationModel.pageSize // 페이지 크기만 포함
+    ],
+    queryFn: async () => {
+        // 현재 페이지는 상태에서 가져오기 (queryKey 아님)
+        const params = {
+            page: paginationModel.page,
+            size: paginationModel.pageSize,
+        };
+        return api.get('/data', { params });
+    }
+});
+```
+
+### 접근 방식 2: 더 간단한 상태 관리 고려하기
+
+```tsx
+// 때로는 가장 간단한 해결책이 최선일 수 있음
+const [data, setData] = useState([]);
+const [isLoading, setIsLoading] = useState(false);
+
+const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await api.get('/data', {
+            params: {
+                page: paginationModel.page,
+                size: paginationModel.pageSize,
+            }
+        });
+        setData(response.data);
+    } finally {
+        setIsLoading(false);
+    }
+}, [paginationModel]);
+
+useEffect(() => {
+    fetchData();
+}, [fetchData]);
+```
+
+## 핵심 깨달음
+
+React Query는 데이터 캐싱과 재사용에 탁월하지만, 서버 사이드 페이징에서는 페이지/페이지 크기 조합마다 고유한 데이터가 생성되어 의미 있는 캐싱이 어려운 시나리오가 발생합니다.
+
+때로는 "현대적인" 해결책(React Query)이 모든 사용 사례에 최적의 선택은 아닐 수 있습니다. 전통적인 `useEffect` + `useState` 조합이 서버 사이드 페이징 시나리오에서는 더 간단하고 예측 가능할 수 있습니다.
+
+## 배운 점
+
+1. **queryKey의 역할 이해하기**: 단순한 라벨이 아닌 캐시 식별자입니다.
+2. **캐싱의 이점 평가하기**: 서버 사이드 페이징에서는 캐싱이 오히려 불필요할 수 있습니다.
+3. **적절한 도구 선택하기**: React Query를 모든 곳에 강제로 적용하지 마세요. 더 간단한 상태 관리가 나을 수 있습니다.
+4. **페이지와 페이지 크기를 다르게 다루기**: 서로 다른 캐싱 의미론을 가지고 있습니다.
+
+이 경험을 통해 도구의 내부 동작 방식을 이해하는 것이 단순히 패턴을 따르는 것보다 중요하다는 것을 깨달았습니다.

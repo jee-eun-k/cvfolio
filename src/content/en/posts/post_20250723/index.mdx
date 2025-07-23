@@ -1,0 +1,148 @@
+---
+title: "React Query Caching Struggles with Server-Side Pagination"
+date: '2025-07-23'
+draft: false
+seo:
+  title: "React Query Caching Struggles with Server-Side Pagination"
+  description: "Learn how to handle React Query caching with server-side pagination and avoid common pitfalls"
+  tag: "Technical Experience"
+  type: "technology"
+  keywords: ["React Query", "Server-Side Pagination", "Caching", "Pagination", "API Calls"]
+---
+
+## The Problem I Faced
+
+I was implementing server-side pagination with React Query and kept running into this frustrating issue:
+
+- When I included `paginationModel` in the `queryKey`: pageSize changes worked fine, but page navigation kept resetting to 0
+- When I removed `paginationModel` from the `queryKey`: page navigation worked, but pageSize changes didn't trigger new API calls
+
+## My Original (Problematic) Implementation
+
+```tsx
+// ❌ This caused page resets
+const { data, isLoading } = useQuery({
+    queryKey: [
+        'financialFab',
+        bonusMonth,
+        paginationModel, // Including both page and pageSize
+    ],
+    queryFn: async () => {
+        const response = await api.get(`/data`, {
+            params: {
+                page: paginationModel.page,
+                size: paginationModel.pageSize,
+            }
+        });
+        return response.data;
+    },
+});
+```
+
+## What I Learned About React Query Caching
+
+### Key Insight #1: QueryKey Creates Separate Cache Entries
+
+Every unique `queryKey` creates a completely separate cache entry. So:
+
+```ts
+// Different cache entries:
+['financialFab', '2024-01', { page: 0, pageSize: 10 }]
+['financialFab', '2024-01', { page: 1, pageSize: 10 }]
+['financialFab', '2024-01', { page: 0, pageSize: 20 }]
+```
+
+These are three different cache entries with no relationship to each other.
+
+### Key Insight #2: Server-Side Pagination ≠ Client-Side Caching
+
+Server-side pagination means:
+- Every page is different data that requires an API call
+- Every pageSize change is different data that requires an API call
+- React Query's caching works best when you can reuse the same dataset
+
+This creates a fundamental mismatch!
+
+### Key Insight #3: Page vs PageSize Have Different Caching Needs
+
+```tsx
+// Page changes: Need new API call, but could conceptually reuse cache
+// PageSize changes: Definitely need new API call, cache should be separate
+
+// ✅ Only pageSize in queryKey
+queryKey: ['financialFab', bonusMonth, paginationModel.pageSize]
+
+// ✅ Or handle them separately
+const { refetch } = useQuery({
+    queryKey: ['financialFab', bonusMonth],
+    // ...
+});
+
+useEffect(() => {
+    refetch(); // Manual refetch on pageSize change only
+}, [paginationModel.pageSize]);
+```
+
+## Better Approaches I Discovered
+
+### Approach 1: Include Only PageSize in QueryKey
+
+```tsx
+const { data, isLoading } = useQuery({
+    queryKey: [
+        'financialFab',
+        bonusMonth,
+        paginationModel.pageSize // Only pageSize
+    ],
+    queryFn: async () => {
+        // Use current page from state, not queryKey
+        const params = {
+            page: paginationModel.page,
+            size: paginationModel.pageSize,
+        };
+        return api.get('/data', { params });
+    }
+});
+```
+
+### Approach 2: Consider Simpler State Management
+
+```tsx
+// Sometimes the simplest solution is the best
+const [data, setData] = useState([]);
+const [isLoading, setIsLoading] = useState(false);
+
+const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await api.get('/data', {
+            params: {
+                page: paginationModel.page,
+                size: paginationModel.pageSize,
+            }
+        });
+        setData(response.data);
+    } finally {
+        setIsLoading(false);
+    }
+}, [paginationModel]);
+
+useEffect(() => {
+    fetchData();
+}, [fetchData]);
+```
+
+## The Key Realization
+
+React Query is amazing for caching and reusing data, but server-side pagination creates a scenario where every page/pageSize combination is unique data that can't be meaningfully cached.
+
+Sometimes the "modern" solution (React Query) isn't always the best fit for every use case. Traditional `useEffect` + `useState` can be simpler and more predictable for server-side pagination scenarios.
+
+## Lessons Learned
+
+1. **Understand your queryKey**: It's not just a label, it's a cache identifier.
+2. **Evaluate caching benefits**: For server-side pagination, caching often doesn't add value.
+3. **Choose the right tool**: Don't force React Query everywhere; simpler state management might be better.
+4. **Handle page and pageSize differently**: They have different caching semantics.
+
+The struggle taught me that understanding the tool's underlying mechanics is more important than just following patterns!
