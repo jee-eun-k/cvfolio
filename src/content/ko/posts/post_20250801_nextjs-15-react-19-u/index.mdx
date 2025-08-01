@@ -1,0 +1,301 @@
+---
+title: 'Next.js 15 & React 19 업그레이드: 완전한 마이그레이션 가이드'
+date: 2025-08-01
+draft: false
+seo:
+  title: 'Next.js 15 & React 19 업그레이드: 완전한 마이그레이션 가이드'
+  description: 'Next.js 14에서 15로, React 19와 함께 업그레이드하는 종합 가이드 - breaking changes, 마이그레이션 전략, 실제 구현 경험 포함'
+  tag: '기술 경험담'
+  type: 'tutorial'
+  keywords: 'Next.js 15 React 19 업그레이드 마이그레이션 breaking changes TypeScript TanStack Query'
+---
+
+## 도전: 프로덕션 Next.js 애플리케이션 업그레이드
+
+복잡한 Next.js 애플리케이션을 혼자 유지보수하는 프론트엔드 개발자로서, 최근 Next.js 14에서 15로, React 19와 함께 업그레이드하는 어려운 작업에 직면했습니다. 이는 단순한 의존성 업데이트가 아니라 breaking changes를 탐색하고, 3개 서버 아키텍처를 관리하며, 금융 조정 데이터를 처리하는 프로덕션 시스템의 다운타임을 방지해야 하는 작업이었습니다.
+
+제가 유지보수하는 BRS-client 애플리케이션은 은행 조정 시스템의 프론트엔드 역할을 하며, 70개 이상의 페이지, 복잡한 상태 관리, 여러 백엔드 서비스와의 통합을 포함합니다. 업그레이드는 체계적이고, 철저히 테스트되며, 프로덕션 준비가 되어야 했습니다.
+
+## 초기 평가: 우리가 작업한 환경
+
+### 현재 아키텍처
+
+- **Next.js**: 14.2.29 (목표: 15.3.4+)
+- **React**: 18.3.1 (목표: 19.1.0)
+- **TypeScript**: 5.3.3 (목표: 5.8.3)
+- **TanStack Query**: v4 (목표: v5)
+- **MUI**: v5.15 (React 19와 호환)
+
+### 좋은 소식
+
+✅ 이미 App Router 사용 (Next.js 13+ 패턴)  
+✅ 레거시 API 없음 (`getServerSideProps`, `getStaticProps`)  
+✅ 모든 페이지가 `'use client'` 사용 (async request API 문제 없음)  
+✅ 업데이트할 middleware.ts 없음  
+✅ `next/font/local`로 현대적인 폰트 로딩
+
+### 도전 과제
+
+⚠️ 여러 의존성 호환성 문제  
+⚠️ TanStack Query v4 → v5 breaking changes  
+⚠️ React 19 `defaultProps` deprecation  
+⚠️ Next.js 15를 위한 설정 업데이트
+
+## Breaking Changes 분석: 무엇이 잘못될 수 있는가
+
+### Next.js 15 주요 변경사항
+
+1. **Async Request APIs**: `cookies()`, `headers()`, `params`, `searchParams`가 이제 async
+   - **영향**: 없음 (프로젝트가 클라이언트 컴포넌트만 사용)
+2. **캐싱 기본값**: Fetch 요청, GET Route Handlers, Client Router Cache가 이제 기본적으로 캐시되지 않음
+   - **영향**: 최소 (Route Handlers 없음, fetch 사용 검토됨)
+3. **React 19 통합**: App Router가 React 19 RC 사용
+   - **영향**: 높음 (의존성 업데이트 필요)
+
+### React 19 Breaking Changes
+
+1. **`defaultProps` Deprecated**: 함수 컴포넌트가 `defaultProps` 사용 불가
+   - **영향**: 중간 (MUI 테마 설정에 영향)
+2. **Strict Effects**: 향상된 strict mode 동작
+   - **영향**: 낮음 (현재 strict mode 비활성화됨)
+
+## 마이그레이션 전략: 5단계 접근법
+
+### 1단계: 의존성 업데이트 (4시간)
+
+MUI X 패키지 호환성을 위해 `--legacy-peer-deps`를 사용하여 핵심 프레임워크 업데이트부터 시작했습니다:
+
+```bash
+# 핵심 프레임워크 업데이트
+npm install next@^15.3.4 react@^19.1.0 react-dom@^19.1.0 --legacy-peer-deps
+npm install --save-dev @types/react@^19.1.8 @types/react-dom@^19.1.6 --legacy-peer-deps
+
+# 주요 의존성 업데이트
+npm install @tanstack/react-query@^5.0.0
+npm install --save-dev typescript@^5.8.3 --legacy-peer-deps
+```
+
+**핵심 통찰**: `--legacy-peer-deps` 플래그가 아직 peer dependencies를 업데이트하지 않은 MUI X 패키지를 처리하는 데 중요했습니다.
+
+### 2단계: 설정 수정 (2시간)
+
+`next.config.js`와 `package.json` 업데이트:
+
+```javascript
+// deprecated export 스크립트 제거
+// "export": "next export" - Next.js 15에서 deprecated
+
+// 향후 정리를 위한 TODO 주석 추가
+// TODO: 기본 문제 해결 후 ignoreBuildErrors와 ignoreDuringBuilds 제거
+```
+
+### 3단계: React 19 호환성 (3시간)
+
+**MUI `defaultProps` 조사**
+
+MUI의 `defaultProps` 사용에 대해 특히 우려했지만, 철저한 조사 후:
+
+```typescript
+// ✅ 테마 파일에서 defaultProps 사용 없음
+// ✅ 모든 테마 컴포넌트가 styleOverrides 사용 (React 19 호환)
+// ✅ 테마 설정이 이미 현대적이고 호환됨
+```
+
+**Metadata API 마이그레이션**
+
+수동 `<head>` 태그에서 Next.js 15 Metadata API로 마이그레이션:
+
+```typescript
+// 이전: 수동 head 태그
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <head>
+        <title>PM-International Workspace</title>
+        <meta name="description" content="..." />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+
+// 이후: 선언적 metadata
+export const metadata: Metadata = {
+  title: 'PM-International Workspace',
+  description: 'Bank Reconciliation System - BRS Client',
+  icons: { ... }
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+```
+
+### 4단계: TanStack Query v5 마이그레이션 (중요)
+
+이것이 업그레이드의 가장 복잡한 부분이었습니다. TanStack Query v5는 상당한 breaking changes를 도입했습니다:
+
+**이전 (v4):**
+
+```typescript
+mutation.mutate(data, {
+  onSuccess: (result) => {
+    /* 성공 로직 */
+  },
+  onError: (error) => {
+    /* 에러 로직 */
+  },
+});
+```
+
+**이후 (v5):**
+
+```typescript
+try {
+  const result = await mutation.mutateAsync(data);
+  /* 성공 로직 */
+} catch (error) {
+  /* 에러 로직 */
+}
+```
+
+**성공적으로 마이그레이션된 파일들:**
+
+- ✅ `src/sections/recon/management/monthly-bonus-dialog.tsx`
+- ✅ `src/sections/permission-management/groups/group-dialog.tsx`
+- ✅ `src/sections/auth/password-reset-dialog.tsx`
+- ✅ `src/sections/permission-management/roles/role-dialog.tsx`
+- ✅ `src/layouts/dashboard/vertical-layout/side-nav.test.tsx`
+
+**주요 변경사항:**
+
+- `cacheTime` → `gcTime` (가비지 컬렉션 시간)
+- Mutation 콜백이 async/await를 선호하여 deprecated
+- try/catch 패턴으로 향상된 에러 처리
+
+### 5단계: 테스트 및 검증 (2시간)
+
+**테스트 스위트 결과:**
+
+- ✅ **단위 테스트**: 52/54 테스트 통과 (96% 통과율)
+- ✅ **React 19 호환성**: 모든 테스트가 성공적으로 실행
+- ✅ **TypeScript 컴파일**: 모든 파일이 성공적으로 컴파일
+- ✅ **프로덕션 빌드**: 70개 페이지 모두 10.0초에 컴파일
+
+**중요한 사용자 플로우 테스트:**
+
+- ✅ 인증 플로우가 올바르게 작동
+- ✅ 70개 페이지 모두 접근 가능하고 기능적
+- ✅ 3개 서버 아키텍처가 작동
+- ✅ 새로운 mutation 패턴으로 폼 제출이 작동
+
+## 예상치 못한 도전 과제
+
+### 1. Peer Dependency 경고
+
+업그레이드가 수많은 peer dependency 경고를 생성했지만, 이는 예상되고 차단되지 않는 것이었습니다:
+
+```bash
+npm WARN ERESOLVE overriding peer dependency
+npm WARN While resolving: @mui/x-data-grid@6.18.0
+npm WARN Found: react@19.1.0
+npm WARN node_modules/react
+npm WARN   react@"^19.1.0" from the root project
+```
+
+**해결책**: `--legacy-peer-deps` 플래그를 사용하고 이러한 경고가 예상된다고 문서화했습니다.
+
+### 2. 복잡한 파일의 테스트 실패
+
+광범위한 모킹이 있는 두 개의 테스트 파일이 업그레이드 후 실패했습니다:
+
+```typescript
+// 광범위한 모킹이 있는 복잡한 테스트
+// React 19를 위한 모크 구현 업데이트 필요
+```
+
+**해결책**: 프로덕션에 차단되지 않는 것으로 표시하고, 점진적으로 해결할 예정입니다.
+
+### 3. 남은 레거시 패턴
+
+~50개 이상의 파일이 여전히 이전 TanStack Query 콜백 패턴을 사용하지만 빌드는 통과합니다:
+
+```typescript
+// 이것들은 여전히 작동하지만 점진적으로 마이그레이션해야 함
+mutation.mutate(data, {
+  onSuccess: (result) => {
+    /* 레거시 패턴 */
+  },
+});
+```
+
+**해결책**: 지속적인 개발 중 점진적 마이그레이션.
+
+## 달성한 성능 개선
+
+### 빌드 성능
+
+- **빌드 시간**: 10.0초 (우수한 성능)
+- **정적 생성**: 70/70 페이지 (100% 성공)
+- **번들 최적화**: 적절한 코드 분할 유지
+
+### 런타임 이점
+
+- React 19의 향상된 동시성 기능
+- 더 나은 에러 경계와 폼 처리
+- 개선된 캐싱 전략
+- 현대적인 async/await 패턴
+
+## 주요 교훈
+
+### ➡️ **계획이 모든 것**
+
+명확한 롤백 전략이 있는 5단계 접근법이 중요했습니다. 각 단계는 진행하기 전에 독립적으로 테스트되었습니다.
+
+### ➡️ **Peer Dependencies가 중요하다**
+
+`--legacy-peer-deps` 플래그가 아직 peer dependencies를 업데이트하지 않은 MUI X 패키지를 처리하는 데 필수적이었습니다.
+
+### ➡️ **점진적 마이그레이션이 작동한다**
+
+모든 것이 즉시 완벽할 필요는 없습니다. 레거시 패턴이 있는 ~50개 파일은 점진적으로 마이그레이션할 수 있습니다.
+
+### ➡️ **테스트 전략이 중요하다**
+
+포괄적인 테스트 스위트(96% 통과율)가 업그레이드가 중요한 기능을 깨뜨리지 않았다는 확신을 주었습니다.
+
+### ➡️ **문서화가 시간을 절약한다**
+
+상세한 업그레이드 계획이 로드맵과 미래 참조를 위한 문서화 역할을 했습니다.
+
+## 예방 팁
+
+### ✅ **이렇게 하세요**
+
+- 단계가 있는 포괄적인 업그레이드 계획 생성
+- 복잡한 의존성 트리를 위해 `--legacy-peer-deps` 사용
+- 각 단계를 독립적으로 테스트
+- 롤백 전략 유지
+- 모든 변경사항과 결정을 문서화
+
+### ❌ **이렇게 하지 마세요**
+
+- 테스트 없이 모든 것을 한 번에 업그레이드
+- 이해하지 않고 peer dependency 경고 무시
+- 테스트 단계 건너뛰기
+- 프로세스 문서화 잊기
+- 모든 breaking changes가 문서화되었다고 가정
+
+## 리소스
+
+- [Next.js 15 마이그레이션 가이드](https://nextjs.org/docs/upgrading)
+- [React 19 Breaking Changes](https://react.dev/blog/2024/02/15/react-labs-what-we-have-been-working-on-february-2024)
+- [TanStack Query v5 마이그레이션 가이드](https://tanstack.com/query/latest/docs/react/guides/migrating-to-v5)
+- [Next.js 15 Metadata API](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)
+
+---
+
+_이 업그레이드 경험은 주요 프레임워크 업데이트를 다룰 때 체계적인 계획과 점진적 테스트의 중요성을 가르쳐주었습니다. 핵심은 단순히 의존성을 업그레이드하는 것이 아니라, 각 변경사항의 영향을 이해하고 예상치 못한 상황을 처리할 명확한 전략을 갖는 것이었습니다._
+
+_이제 주요 프레임워크 업그레이드를 수행할 때 항상 명확한 롤백 전략이 있는 단계적 접근법을 만들어야 한다는 것을 알게 되었고, peer dependency 관리가 실제 코드 변경보다 종종 더 복잡하다는 것도 알게 되었습니다._

@@ -8,11 +8,8 @@ import { getLocalizedAuthor } from '@/lib/constants';
 import { getLocalizedContent } from '@/lib/content';
 
 const entry = await getEntry('pages-en', 'toy-projects');
-const projects = await getLocalizedContent('projects', 'en');
-const filteredProjects = projects.filter(({ data }) => !data.draft);
-
-console.log('Projects found:', filteredProjects.length);
-console.log('Projects data:', filteredProjects.map(p => ({ id: p.id, title: p.data.title })));
+const projects = await getCollection('projects-en');
+const filteredProjects = projects.filter(project => !project.data.draft);
 ---
 
 <BaseLayout seo={entry?.data.seo}>

@@ -36,18 +36,6 @@ export async function getStaticPaths() {
     const enPosts = enEntries;
     const koPosts = koEntries;
     
-    // Log for debugging
-    console.log(`Found ${enPosts.length} English posts and ${koPosts.length} Korean posts`);
-    
-    // Debug post details
-    if (enPosts.length > 0) {
-      console.log('First English post:', {
-        id: enPosts[0].id,
-        collection: enPosts[0].collection,
-        title: enPosts[0].data.title
-      });
-    }
-    
     // Filter out draft posts in production for each language
     const publishedEnPosts = enPosts.filter((post) => {
       return !(import.meta.env.PROD && post.data.draft === true);
@@ -56,8 +44,6 @@ export async function getStaticPaths() {
     const publishedKoPosts = koPosts.filter((post) => {
       return !(import.meta.env.PROD && post.data.draft === true);
     });
-    
-    console.log(`Found ${publishedEnPosts.length} English and ${publishedKoPosts.length} Korean published posts`);
     
     // Generate paths for English posts (default route)
     const enPaths = publishedEnPosts.map((post) => {
@@ -76,8 +62,6 @@ export async function getStaticPaths() {
         slug = post.id.replace(/\.[^/.]+$/, '');
       }
       
-      console.log(`Generating English path for ${post.id} -> /writing/${slug}`);
-      
       return {
         params: { slug },
         props: { post },
@@ -95,8 +79,6 @@ export async function getStaticPaths() {
         slug = post.id.replace(/\.[^/.]+$/, '');
       }
       
-      console.log(`Generating Korean path for ${post.id} -> /writing/ko/${slug}`);
-      
       return {
         params: { slug: `ko/${slug}` },
         props: { post },
@@ -113,14 +95,6 @@ export async function getStaticPaths() {
 
 // Get the current post from props
 const { post } = Astro.props;
-
-// Debug post structure
-console.log('Post object structure:', {
-  id: post.id,
-  collection: post.collection,
-  data: post.data,
-  keys: Object.keys(post),
-});
 
 // Render the post content
 const { Content } = await render(post);

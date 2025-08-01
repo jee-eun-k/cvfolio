@@ -8,24 +8,32 @@ export const seoSchemaWithoutImage = z.object({
   type: z.string().optional(),
   keywords: z.string().optional(),
   canonicalUrl: z.string().optional(),
-  twitter: z.object({
-    creator: z.string().optional(),
-  }).optional(),
+  twitter: z
+    .object({
+      creator: z.string().optional(),
+    })
+    .optional(),
   robots: z.string().optional(),
-})
+});
 
 const seoSchema = (image: ImageFunction) =>
-  z.object({
-    image: image().optional(),
-  }).merge(seoSchemaWithoutImage);
+  z
+    .object({
+      image: image().optional(),
+    })
+    .merge(seoSchemaWithoutImage);
 
 // English collections
 const pageCollectionEn = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/pages' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    seo: seoSchema(image),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/en/pages',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      seo: seoSchema(image),
+    }),
 });
 
 const linkCollectionEn = defineCollection({
@@ -50,7 +58,10 @@ const jobCollectionEn = defineCollection({
 });
 
 const talkCollectionEn = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/talks' }),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/en/talks',
+  }),
   schema: z.object({
     title: z.string(),
     year: z.number(),
@@ -61,35 +72,57 @@ const talkCollectionEn = defineCollection({
 });
 
 const postCollectionEn = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/posts' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    date: z.date(),
-    draft: z.boolean().optional().default(false),
-    image: image().optional(),
-    seo: seoSchema(image),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/en/posts',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      date: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
+      draft: z.boolean().optional().default(false),
+      image: image().optional(),
+      seo: z
+        .object({
+          title: z.string(),
+          description: z.string(),
+          tag: z.string(),
+          type: z.string(),
+          keywords: z
+            .union([z.string(), z.array(z.string())])
+            .transform((val) => (Array.isArray(val) ? val.join(' ') : val)),
+        })
+        .optional(),
+    }),
 });
 
 const projectCollectionEn = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/en/projects' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    description: z.string(),
-    image: image().optional(),
-    url: z.string(),
-    tech: z.array(z.string()).optional(),
-    draft: z.boolean().optional().default(false),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/en/projects',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      description: z.string(),
+      image: image().optional(),
+      url: z.string(),
+      tech: z.array(z.string()).optional(),
+      draft: z.boolean().optional().default(false),
+    }),
 });
 
 // Korean collections
 const pageCollectionKo = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/pages' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    seo: seoSchema(image),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/ko/pages',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      seo: seoSchema(image),
+    }),
 });
 
 const linkCollectionKo = defineCollection({
@@ -114,7 +147,10 @@ const jobCollectionKo = defineCollection({
 });
 
 const talkCollectionKo = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/talks' }),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/ko/talks',
+  }),
   schema: z.object({
     title: z.string(),
     year: z.number(),
@@ -125,26 +161,44 @@ const talkCollectionKo = defineCollection({
 });
 
 const postCollectionKo = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/posts' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    date: z.date(),
-    draft: z.boolean().optional().default(false),
-    image: image().optional(),
-    seo: seoSchema(image),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/ko/posts',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      date: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
+      draft: z.boolean().optional().default(false),
+      image: image().optional(),
+      seo: z
+        .object({
+          title: z.string(),
+          description: z.string(),
+          tag: z.string(),
+          type: z.string(),
+          keywords: z
+            .union([z.string(), z.array(z.string())])
+            .transform((val) => (Array.isArray(val) ? val.join(' ') : val)),
+        })
+        .optional(),
+    }),
 });
 
 const projectCollectionKo = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/ko/projects' }),
-  schema: ({ image }) => z.object({
-    title: z.string(),
-    description: z.string(),
-    image: image().optional(),
-    url: z.string(),
-    tech: z.array(z.string()).optional(),
-    draft: z.boolean().optional().default(false),
+  loader: glob({
+    pattern: '**/[^_]*.{md,mdx}',
+    base: './src/content/ko/projects',
   }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      description: z.string(),
+      image: image().optional(),
+      url: z.string(),
+      tech: z.array(z.string()).optional(),
+      draft: z.boolean().optional().default(false),
+    }),
 });
 
 export const collections = {
@@ -155,7 +209,7 @@ export const collections = {
   'talks-en': talkCollectionEn,
   'posts-en': postCollectionEn,
   'projects-en': projectCollectionEn,
-  
+
   // Korean collections
   'pages-ko': pageCollectionKo,
   'links-ko': linkCollectionKo,

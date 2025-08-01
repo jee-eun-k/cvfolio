@@ -3,11 +3,17 @@
   "type": "module",
   "version": "0.0.0",
   "scripts": {
-    "dev": "astro dev",  
+    "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "new-post": "node scripts/create-post.js",
+    "test-posts": "node test-posts.mjs",
+    "posts": "node scripts/manage-posts.js",
+    "posts:list": "node scripts/manage-posts.js list",
+    "posts:publish": "node scripts/manage-posts.js publish",
+    "posts:unpublish": "node scripts/manage-posts.js unpublish"
   },
   "dependencies": {
     "@astrojs/mdx": "4.3.0",
