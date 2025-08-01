@@ -142,7 +142,7 @@ async function main() {
     console.log(`
 📝 Blog Post Creator
 
-Usage: node scripts/create-post.js "Your Post Title" [options]
+Usage: bun run scripts/create-post.js "Your Post Title" [options]
 
 Options:
   --description "Brief description"
@@ -152,9 +152,9 @@ Options:
   --no-korean (skip Korean version)
 
 Examples:
-  node scripts/create-post.js "My New Article"
-  node scripts/create-post.js "Debugging Tips" --tag "Debugging" --type "tutorial"
-  node scripts/create-post.js "Quick Fix" --description "A quick solution" --no-korean
+  bun run scripts/create-post.js "My New Article"
+  bun run scripts/create-post.js "Debugging Tips" --tag "Debugging" --type "tutorial"
+  bun run scripts/create-post.js "Quick Fix" --description "A quick solution" --no-korean
 `);
     return;
   }

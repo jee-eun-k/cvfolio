@@ -1,0 +1,341 @@
+---
+title: 'My Grand Adventure: Taming PKCE and Keycloak in Next.js'
+date: 2025-08-01
+draft: false
+seo:
+  title: 'My Grand Adventure: Taming PKCE and Keycloak in Next.js'
+  description: "A solo frontend engineer's journey implementing SSO with Keycloak and PKCE on client-side rendered Next.js projects, battling infinite loops, memory-hungry ghost sessions, and achieving victory"
+  tag: 'Technical Experience'
+  type: 'tutorial'
+  keywords: 'PKCE Keycloak Next.js SSO authentication OAuth2 memory management debugging'
+---
+
+## The Challenge: Implementing PKCE and Keycloak SSO
+
+So, there I was, a solo frontend engineer, handed a quest of epic proportions: implement SSO with Keycloak and this mysterious thing called PKCE (Proof Key for Code Exchange) on not one, but two fully client-side rendered Next.js projects. My first thought? "PK-what-now?" 😅 It sounded like a droid from Star Wars.
+
+This is the story of my journey through the treacherous lands of authentication, battling infinite loops, memory-hungry ghost-sessions, and cryptic errors. It's a tale of struggle, discovery, and ultimately, a pretty sweet victory. If you're a developer who's ever felt a little overwhelmed by a new task, grab a coffee, and let's dive in.
+
+## Chapter 1: What in the World is PKCE? 🤔
+
+Before I could write a single line of code, I had to understand my adversary. After much Googling, I finally wrapped my head around it.
+
+In simple terms, PKCE is like a secret handshake for your app and the login server (Keycloak, in my case). It's designed for apps that can't keep a secret, like our browser-based Next.js apps (SPAs).
+
+Here's the gist:
+
+**The App Makes a Promise**: Before sending you to the login page, the app creates a secret (code_verifier) and a public promise based on that secret (code_challenge). It sends the public promise to Keycloak, saying, "Hey, I'm sending a user over. When they come back with a temporary pass, I'll tell you my secret to prove it's really me."
+
+**You Log In**: You go to Keycloak, enter your password, and Keycloak gives you a temporary pass (authorization_code).
+
+**The Secret Handshake**: You return to the app with this pass. The app then goes back to Keycloak and says, "Here's the temporary pass, and here's my secret (code_verifier) as promised!"
+
+**Success!** Keycloak checks if the secret matches the promise it received earlier. If it does, it hands over the real keys to the kingdom (the access tokens), and you're in!
+
+This handshake prevents a sneaky attacker who might steal the temporary pass from using it, because they don't know the original secret. It's a simple but brilliant way to secure the login flow.
+
+## Chapter 2: The First Attempt & The Infinite Loop of Despair 😫
+
+Armed with my new knowledge, I dove in. I configured Keycloak, set up my Next.js environment, and wrote the initialization code. I clicked "Login."
+
+...and was immediately thrown into the Infinite Loop of Despair.
+
+The page would redirect to Keycloak, then back to my app, then back to Keycloak, over and over, faster than I could even open the developer tools. It was a classic rookie mistake, but a frustrating one. My app and Keycloak were caught in a never-ending argument about who should handle the user's state.
+
+## Chapter 3: A Peek Under the Hood: The Code That Made It Happen 🛠️
+
+For my fellow developers who might be on a similar quest, here's a look at the key pieces of code that formed the backbone of my solution. Think of this as the spellbook I used to tame the beast.
+
+### Setting the Stage: Environment Variables
+
+First things first, you need to tell your Next.js app where to find Keycloak. This is done with a `.env.local` file at the root of your project.
+
+```bash
+# .env.local
+
+# Your Keycloak server's URL
+NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/
+
+# The name of the 'realm' you're using in Keycloak
+NEXT_PUBLIC_KEYCLOAK_REALM=my-awesome-realm
+
+# The 'Client ID' for your front-end application
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=my-nextjs-app
+```
+
+### The Brains of the Operation: Keycloak Initialization
+
+This is where you configure the keycloak-js library. The magic happens in the init options, where you explicitly enable PKCE.
+
+```typescript
+// src/lib/keycloak-config.ts
+import Keycloak from 'keycloak-js';
+
+const keycloak = new Keycloak({
+  url: process.env.NEXT_PUBLIC_KEYCLOAK_URL,
+  realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM!,
+  clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID!,
+});
+
+export const initializeKeycloak = async () => {
+  try {
+    const authenticated = await keycloak.init({
+      // 'check-sso' attempts to silently log in the user if they have a session.
+      // This is key to avoiding unnecessary login screens.
+      onLoad: 'check-sso',
+
+      // This is the most important part! We're telling Keycloak to use the
+      // 'S256' method for PKCE, which is SHA-256.
+      pkceMethod: 'S256',
+
+      // A page for silent authentication checks, which helps prevent
+      // the main app window from being reloaded.
+      silentCheckSsoRedirectUri:
+        window.location.origin + '/silent-check-sso.html',
+    });
+    console.log(
+      `User is ${authenticated ? 'authenticated' : 'not authenticated'}`
+    );
+    return authenticated;
+  } catch (error) {
+    console.error('Failed to initialize Keycloak', error);
+    return false;
+  }
+};
+
+export default keycloak;
+```
+
+### The Heart of the App: React Context
+
+To make the authentication state (like "is the user logged in?") available everywhere in the app, a React Context is the perfect tool.
+
+```typescript
+// src/contexts/AuthContext.tsx
+'use client';
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { initializeKeycloak } from '@/lib/keycloak-config';
+import keycloak from '@/lib/keycloak-config';
+
+interface IAuthContext {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: () => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<IAuthContext | null>(null);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const authenticated = await initializeKeycloak();
+      setIsAuthenticated(authenticated);
+      setIsLoading(false);
+    };
+    initAuth();
+  }, []);
+
+  const login = () => keycloak.login();
+  const logout = () => keycloak.logout();
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a fancy spinner!
+  }
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext)!;
+```
+
+You would then wrap your entire application with this AuthProvider in your main layout.tsx.
+
+### The Guardian at the Gates: Protected Routes
+
+Finally, you need a way to protect certain pages so only logged-in users can see them. A simple component can act as a guard.
+
+```typescript
+// src/components/AuthGuard.tsx
+'use client';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+
+export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, login } = useAuth();
+
+  useEffect(() => {
+    // If the user is not authenticated, trigger the login flow.
+    if (!isAuthenticated) {
+      login();
+    }
+  }, [isAuthenticated, login]);
+
+  // If they are authenticated, show the page content.
+  // Otherwise, show nothing while we redirect to login.
+  return isAuthenticated ? <>{children}</> : null;
+};
+```
+
+Then, on any page that needs protection, you just wrap the content with this guard:
+
+```typescript
+// src/app/dashboard/page.tsx
+import { AuthGuard } from '@/components/AuthGuard';
+
+export default function DashboardPage() {
+  return (
+    <AuthGuard>
+      <h1>Welcome to your Dashboard!</h1>
+      <p>Only cool, logged-in people can see this.</p>
+    </AuthGuard>
+  );
+}
+```
+
+These snippets form a solid, secure, and modern authentication foundation for any Next.js app.
+
+## Chapter 4: The Plot Thickens - My App is Possessed! 👻
+
+After fixing the redirect loops (a story for another day, involving useRef and careful useEffect dependencies), a new, more sinister problem emerged. The app would just... die. It would work for a bit, then the browser tab would crash completely. The worst part? The browser would crash so fast that all my precious console.log messages were wiped out. I was flying blind.
+
+This felt like a turning point. How do you debug something when your tools are taken away?
+
+**My solution**: If the browser won't talk, maybe the server will. I built a tiny, scrappy server-side logging system.
+
+The idea was simple:
+
+1. The client-side app would collect all important logs (especially from Keycloak).
+2. Every few seconds, it would bundle them up and send them to a new API endpoint on the Next.js server.
+3. The server would write these logs to a file on its disk.
+
+Now, even if the browser tab went down in a blaze of glory, the logs would be safe and sound on the server, waiting for me. This was the single most important thing I did. It turned the lights back on.
+
+## Chapter 5: The Detective Work - Following the Breadcrumbs 🕵️‍♀️
+
+With my server-side logger humming along, I finally had evidence. I told the user to use the app until it crashed, and then I dove into the log files.
+
+The discovery was... weird. For a single user, I was seeing over eight different session IDs being created in a matter of minutes. Every time the page reloaded or crashed, my logging code was generating a new session ID.
+
+Then I saw the memory reports I had cleverly added to my logs.
+
+```json
+{
+  "timestamp": "2025-08-01T07:28:00.100Z",
+  "level": "critical",
+  "message": "[Keycloak] Initialization complete.",
+  "memory": { "used": 180, "total": 200, "percentage": 90 }
+},
+{
+  "timestamp": "2025-08-01T07:28:00.102Z",
+  "level": "critical",
+  "message": "Page is about to unload - possible crash detected"
+}
+```
+
+The app's memory usage was skyrocketing to 90-95%, and then it would crash just milliseconds after Keycloak finished initializing.
+
+**The "Aha!" Moment**: It wasn't a memory leak in the traditional sense. It was session proliferation. Each of those ghost sessions was a full-blown Keycloak instance running in the background, consuming memory. My app wasn't possessed; it was being suffocated by its own clones!
+
+## Chapter 6: The Grand Fix & Victory! 🏆
+
+Once I knew the enemy, I could fight it. I launched a multi-pronged attack:
+
+### 1. Persistent Session IDs
+
+The logger was the first to be fixed. Instead of creating a new session ID every time, I made it look for one in sessionStorage first. If it found one, it would reuse it. Simple, but effective.
+
+**Before**: `this.sessionId = generateNewId();`
+
+**After**: `this.sessionId = getFromSessionStorage() || generateNewId();`
+
+### 2. Taming Keycloak's Session Management
+
+I had been trying to outsmart Keycloak with my own session logic. I surrendered. I went back to the library's native `onLoad: "check-sso"` and focused on configuring it correctly, disabling the memory-hungry iframe checks.
+
+### 3. Smarter Token Refresh
+
+I realized the token refresh was happening too often. I extended the interval and, more importantly, added a safety check: "if memory usage is over 90%, don't even try to refresh the token, just let it expire and force a re-login."
+
+### 4. Cleaning Up My Mess
+
+I added proper cleanup functions. When a user logs out or the component unmounts, I now explicitly clear all timers and tell Keycloak to clean up after itself.
+
+The difference was night and day. The app became stable. Memory usage dropped to a comfortable level. No more crashes. Victory!
+
+## Chapter 7: The Final, Glorious Architecture ✨
+
+After all the battles, I had a system I was proud of. It was clean, efficient, and secure.
+
+### The Old Way (The Mess):
+
+❌ Two competing authentication systems (my custom logic vs. Keycloak's).  
+❌ Double Keycloak initialization errors.  
+❌ Complex server-side proxy logic.  
+❌ Conflicting route groups in Next.js.
+
+### The New Way (The Dream):
+
+✅ A single, clean authentication flow driven by Keycloak.  
+✅ No more initialization conflicts.  
+✅ Direct, secure API calls from the front end to the back end.  
+✅ A clean separation of concerns: Keycloak handles Authentication (who you are), and our internal service handles Authorization (what you're allowed to do).  
+✅ A simple, predictable routing structure.
+
+## Key Takeaways
+
+### ➡️ **Don't be afraid to get your hands dirty**
+
+Reading the docs is one thing, but wrestling with an implementation is where the real learning happens.
+
+### ➡️ **When your tools fail, build better ones**
+
+The server-side logger was a simple idea that saved the project.
+
+### ➡️ **Trust the library, but configure it wisely**
+
+Often, the library (like Keycloak-js) has the right tools, but you need to understand how to use them for your specific case.
+
+### ➡️ **Celebrate the wins!**
+
+After weeks of struggle, seeing that stable memory graph and a smoothly running app was one of the most satisfying moments of my career.
+
+## Prevention Tips
+
+### ✅ **Do This**
+
+- Build server-side logging when debugging complex client issues
+- Use PKCE for SPAs - it's the right security model
+- Implement proper cleanup functions for authentication libraries
+- Monitor memory usage during authentication flows
+- Test with real users, not just development scenarios
+
+### ❌ **Don't Do This**
+
+- Try to outsmart established authentication libraries
+- Ignore memory usage patterns during development
+- Skip proper error handling in authentication flows
+- Assume authentication will work the same in production as development
+- Forget to implement proper session management
+
+## Resources
+
+- [PKCE RFC 7636](https://tools.ietf.org/html/rfc7636)
+- [Keycloak Documentation](https://www.keycloak.org/documentation)
+- [Next.js Authentication](https://nextjs.org/docs/authentication)
+- [OAuth 2.0 for Browser-Based Apps](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps)
+
+---
+
+_This project was a rollercoaster, but it taught me so much about authentication, debugging, and the importance of building the right tools for the job. The key was not just implementing PKCE and Keycloak, but understanding how they work together and building a robust system around them._
+
+_So, if you're out there fighting your own coding dragon, don't give up. The answer is often just one good log message away. Happy coding!_

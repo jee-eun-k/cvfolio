@@ -151,7 +151,7 @@ async function main() {
       console.log(`
 📝 Post Management Tool
 
-Usage: node scripts/manage-posts.js <command> [options]
+Usage: bun run scripts/manage-posts.js <command> [options]
 
 Commands:
   list, ls          List all posts with their status
@@ -159,9 +159,9 @@ Commands:
   unpublish <id>    Unpublish a post (set draft: true)
 
 Examples:
-  node scripts/manage-posts.js list
-  node scripts/manage-posts.js publish post_20250101_my-article
-  node scripts/manage-posts.js unpublish post_20250101_my-article
+  bun run scripts/manage-posts.js list
+  bun run scripts/manage-posts.js publish post_20250101_my-article
+  bun run scripts/manage-posts.js unpublish post_20250101_my-article
 `);
   }
 }

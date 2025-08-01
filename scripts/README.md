@@ -8,26 +8,26 @@ This directory contains scripts to simplify the process of creating and managing
 
 ```bash
 # Create a new post with default settings
-npm run new-post "Your Post Title"
+bun run new-post "Your Post Title"
 
 # Create a post with custom metadata
-npm run new-post "Debugging Tips" --description "How to debug common issues" --tag "Debugging" --type "tutorial"
+bun run new-post "Debugging Tips" --description "How to debug common issues" --tag "Debugging" --type "tutorial"
 
 # Create only English version (skip Korean)
-npm run new-post "Quick Fix" --no-korean
+bun run new-post "Quick Fix" --no-korean
 ```
 
 ### Managing Existing Posts
 
 ```bash
 # List all posts with their status
-npm run posts:list
+bun run posts:list
 
 # Publish a draft post
-npm run posts:publish post_20250101_my-article
+bun run posts:publish post_20250101_my-article
 
 # Unpublish a post (make it draft again)
-npm run posts:unpublish post_20250101_my-article
+bun run posts:unpublish post_20250101_my-article
 ```
 
 ## Scripts Overview
@@ -46,7 +46,7 @@ Creates new blog posts with proper directory structure and frontmatter templates
 **Usage:**
 
 ```bash
-node scripts/create-post.js "Title" [options]
+bun run scripts/create-post.js "Title" [options]
 ```
 
 **Options:**
@@ -110,11 +110,11 @@ The generated posts include templates that follow your established writing style
 
 ## Workflow
 
-1. **Create**: `npm run new-post "Title"`
+1. **Create**: `bun run new-post "Title"`
 2. **Edit**: Modify the generated `.mdx` files
-3. **Preview**: `npm run dev` to see your changes
-4. **Publish**: `npm run posts:publish <post-id>`
-5. **Manage**: `npm run posts:list` to see all posts
+3. **Preview**: `bun run dev` to see your changes
+4. **Publish**: `bun run posts:publish <post-id>`
+5. **Manage**: `bun run posts:list` to see all posts
 
 ## Tips
 
